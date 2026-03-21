@@ -8,8 +8,8 @@ export const AnalyzeRequestSchema = z.object({
   filePath: z.string().optional(),
   /** The programming language of the code */
   language: z.string().optional(),
-  /** Session ID to associate the analysis with */
-  sessionId: z.string().uuid(),
+  /** Session ID to associate the analysis with (optional for standalone testing) */
+  sessionId: z.string().uuid().optional(),
 });
 
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
