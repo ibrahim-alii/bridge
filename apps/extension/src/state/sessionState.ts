@@ -4,28 +4,34 @@ import type {
   BridgeApproval,
   AnalyzeResponse,
   EvaluateResponse,
+  EvaluateRequest,
 } from '@bridge/contracts';
 import { generateId, expiresIn, logger } from '@bridge/shared-utils';
 
 const API_BASE = 'http://localhost:3727/api';
 
 /**
- * Manages Bridge session state and API communication.
- * In mock mode, keeps state in-memory. In live mode, syncs with the API.
+ * Holds session snapshot and forwards requests to the backend.
+ * Does not implement grading or policy — responses drive UI updates.
  */
-export class SessionManager {
+export class SessionManager implements vscode.Disposable {
   private state: SessionState | null = null;
-  private context: vscode.ExtensionContext;
+  private readonly context: vscode.ExtensionContext;
+  private readonly _onDidChangeSession = new vscode.EventEmitter<SessionState | null>();
+  readonly onDidChangeSession = this._onDidChangeSession.event;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
 
-    // Restore session from workspace state
     const saved = context.workspaceState.get<SessionState>('bridge.session');
     if (saved) {
       this.state = saved;
       logger.info('Restored Bridge session', { sessionId: saved.sessionId });
     }
+  }
+
+  dispose(): void {
+    this._onDidChangeSession.dispose();
   }
 
   getState(): SessionState | null {
@@ -47,8 +53,7 @@ export class SessionManager {
       const data = (await response.json()) as { sessionId: string; state: SessionState };
       this.state = data.state;
     } catch {
-      // Fallback to local mock session
-      logger.warn('API unreachable, creating local mock session');
+      logger.warn('API unreachable, creating local placeholder session');
       this.state = {
         sessionId: generateId(),
         isLocked: false,
@@ -82,14 +87,15 @@ export class SessionManager {
         }),
       });
 
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
       const result = (await response.json()) as AnalyzeResponse;
 
-      // Create gate from analysis
-      if (result.suggestedGate !== 'none') {
-        this.state!.isLocked = true;
-        this.state!.activeGate = result.suggestedGate;
-        this.state!.pendingGates.push({
+      if (result.suggestedGate !== 'none' && this.state) {
+        this.state.isLocked = true;
+        this.state.activeGate = result.suggestedGate;
+        this.state.pendingGates.push({
           scope: result.suggestedGate,
           analysisId: result.analysisId,
           createdAt: new Date().toISOString(),
@@ -99,16 +105,26 @@ export class SessionManager {
 
       return result;
     } catch {
-      // Mock fallback
-      logger.warn('Using mock analysis response');
-      return {
+      logger.warn('Using placeholder analysis — locking for UI preview');
+      const mock: AnalyzeResponse = {
         analysisId: generateId(),
         complexity: 5,
-        concepts: ['mock'],
-        summary: 'Mock analysis result.',
+        concepts: ['placeholder'],
+        summary: 'Placeholder analysis — connect API for real results.',
         suggestedGate: 'quiz',
         gatedBlocks: [],
       };
+      if (this.state && mock.suggestedGate !== 'none') {
+        this.state.isLocked = true;
+        this.state.activeGate = mock.suggestedGate;
+        this.state.pendingGates.push({
+          scope: mock.suggestedGate,
+          analysisId: mock.analysisId,
+          createdAt: new Date().toISOString(),
+        });
+        await this.persist();
+      }
+      return mock;
     }
   }
 
@@ -117,21 +133,110 @@ export class SessionManager {
       throw new Error('No active session');
     }
 
+    const scope = this.state.activeGate ?? 'commit';
+    const sessionId = this.state.sessionId;
+
+    if (scope === 'quiz') {
+      return {
+        passed: false,
+        feedback: 'Use the quiz options for this gate.',
+      };
+    }
+    if (scope === 'bug') {
+      return {
+        passed: false,
+        feedback: 'Use the bug submission form (line + explanation).',
+      };
+    }
+
+    let payload: EvaluateRequest;
+    if (scope === 'blank') {
+      payload = {
+        sessionId,
+        scope: 'blank',
+        blankAnswer: { code: answer, blockId: 'placeholder' },
+      };
+    } else {
+      payload = {
+        sessionId,
+        scope: 'commit',
+        commitAnswer: { explanation: answer, diffBlockId: 'placeholder' },
+      };
+    }
+
+    return this.forwardEvaluate(payload);
+  }
+
+  async submitQuizAnswer(questionId: string, selectedIndex: number): Promise<EvaluateResponse> {
+    if (!this.state) {
+      throw new Error('No active session');
+    }
+
+    const payload: EvaluateRequest = {
+      sessionId: this.state.sessionId,
+      scope: 'quiz',
+      quizAnswer: { questionId, selectedIndex },
+    };
+
+    return this.forwardEvaluate(payload);
+  }
+
+  async submitBugAnswer(identifiedLine: number, explanation: string): Promise<EvaluateResponse> {
+    if (!this.state) {
+      throw new Error('No active session');
+    }
+
+    const payload: EvaluateRequest = {
+      sessionId: this.state.sessionId,
+      scope: 'bug',
+      bugAnswer: { identifiedLine, explanation },
+    };
+
+    return this.forwardEvaluate(payload);
+  }
+
+  async requestMentorHint(): Promise<{ hint: string }> {
+    if (!this.state) {
+      throw new Error('No active session');
+    }
+
     try {
-      const response = await fetch(`${API_BASE}/evaluate`, {
+      const response = await fetch(`${API_BASE}/mentor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId: this.state.sessionId,
-          scope: this.state.activeGate || 'commit',
-          commitAnswer: {
-            explanation: answer,
-            diffBlockId: 'current',
-          },
+          activeGate: this.state.activeGate,
         }),
       });
 
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+      const data = (await response.json()) as { hint: string };
+      return { hint: data.hint };
+    } catch {
+      return {
+        hint: 'Placeholder: connect POST /mentor for Socratic hints. Ask what invariant the code must keep, or what changes when input is empty.',
+      };
+    }
+  }
+
+  private async forwardEvaluate(payload: EvaluateRequest): Promise<EvaluateResponse> {
+    if (!this.state) {
+      throw new Error('No active session');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
       const result = (await response.json()) as EvaluateResponse;
 
       if (result.passed) {
@@ -143,23 +248,24 @@ export class SessionManager {
 
       return result;
     } catch {
-      // Mock fallback — always pass
-      await this.unlockGate();
       return {
-        passed: true,
-        feedback: 'Mock: answer accepted.',
+        passed: false,
+        feedback: 'Backend unavailable — answer not evaluated. Wire /evaluate to continue.',
+        hint: 'The extension only forwards; grading lives on the server.',
       };
     }
   }
 
   private async unlockGate(): Promise<void> {
-    if (!this.state) return;
+    if (!this.state) {
+      return;
+    }
 
     const approval: BridgeApproval = {
       token: generateId(),
       sessionId: this.state.sessionId,
       scope: this.state.activeGate || 'commit',
-      expiresAt: expiresIn(3600), // 1 hour
+      expiresAt: expiresIn(3600),
       reason: 'User demonstrated understanding',
     };
 
@@ -181,5 +287,6 @@ export class SessionManager {
     if (this.state) {
       await this.context.workspaceState.update('bridge.session', this.state);
     }
+    this._onDidChangeSession.fire(this.state);
   }
 }
