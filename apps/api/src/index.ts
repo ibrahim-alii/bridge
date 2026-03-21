@@ -7,6 +7,7 @@ import { analyzeRouter } from './routes/analyze';
 import { quizRouter } from './routes/quiz';
 import { evaluateRouter } from './routes/evaluate';
 import { sessionRouter } from './routes/session';
+import { blankRouter } from './routes/blank';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
 
@@ -31,6 +32,7 @@ app.use('/api/analyze', analyzeRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/api/evaluate', evaluateRouter);
 app.use('/api/session', sessionRouter);
+app.use('/api/blank', blankRouter);
 
 // ─── Start ────────────────────────────────────────────────────────
 app.listen(PORT, () => {
