@@ -1,0 +1,49 @@
+{
+  "analyze": {
+    "analysisId": "00000000-0000-0000-0000-000000000001",
+    "complexity": 6,
+    "concepts": ["function declaration", "conditional logic", "array manipulation"],
+    "summary": "This code defines a function with conditional branching and array operations.",
+    "suggestedGate": "quiz",
+    "gatedBlocks": [
+      {
+        "startLine": 1,
+        "endLine": 15,
+        "reason": "Core logic block contains conditional branching that should be understood."
+      }
+    ]
+  },
+  "quiz": {
+    "quizId": "00000000-0000-0000-0000-000000000002",
+    "questions": [
+      {
+        "questionId": "00000000-0000-0000-0000-000000000003",
+        "question": "What does this function return when the input array is empty?",
+        "options": [
+          "undefined",
+          "null",
+          "An empty array",
+          "It throws an error"
+        ],
+        "correctIndex": 2,
+        "explanation": "The function returns an empty array because no elements are pushed during iteration.",
+        "difficulty": "medium"
+      }
+    ],
+    "passingScore": 0.7
+  },
+  "evaluate": {
+    "passed": true,
+    "feedback": "Your explanation demonstrates sufficient understanding. Gate unlocked."
+  },
+  "session": {
+    "sessionId": "00000000-0000-0000-0000-000000000004",
+    "isLocked": false,
+    "activeGate": null,
+    "pendingGates": [],
+    "approvals": [],
+    "currentAttempts": 0,
+    "maxAttempts": 3,
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  }
+}

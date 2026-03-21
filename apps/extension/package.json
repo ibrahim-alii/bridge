@@ -1,0 +1,70 @@
+{
+  "name": "bridge",
+  "displayName": "Bridge",
+  "description": "A trust and learning layer for AI-assisted development. Enforces comprehension before AI-generated code can be trusted.",
+  "version": "0.1.0",
+  "publisher": "bridge-team",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Education", "Other"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bridge.startSession",
+        "title": "Bridge: Start Session"
+      },
+      {
+        "command": "bridge.submitAnswer",
+        "title": "Bridge: Submit Answer"
+      },
+      {
+        "command": "bridge.analyzeFile",
+        "title": "Bridge: Analyze Current File"
+      },
+      {
+        "command": "bridge.showStatus",
+        "title": "Bridge: Show Session Status"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "bridge-sidebar",
+          "title": "Bridge",
+          "icon": "resources/bridge-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "bridge-sidebar": [
+        {
+          "type": "webview",
+          "id": "bridge.sidebarView",
+          "name": "Bridge Panel"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@bridge/contracts": "workspace:*",
+    "@bridge/shared-utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0"
+  }
+}
