@@ -28,6 +28,24 @@ export type {
   BlankEvaluateResponse,
 } from './blank';
 
+// ─── Sabotage Gate ──────────────────────────────────────────────────
+export {
+  BugTypeSchema,
+  SabotageGateSchema,
+  SabotageRequestSchema,
+  SabotageResponseSchema,
+  SabotageFixRequestSchema,
+  SabotageFixResponseSchema,
+} from './sabotage';
+export type {
+  BugType,
+  SabotageGate,
+  SabotageRequest,
+  SabotageResponse,
+  SabotageFixRequest,
+  SabotageFixResponse,
+} from './sabotage';
+
 // ─── Session ────────────────────────────────────────────────────────
 export {
   GateScopeSchema,
