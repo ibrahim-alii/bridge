@@ -1,13 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { logger } from '@bridge/shared-utils';
 import { analyzeRouter } from './routes/analyze';
 import { quizRouter } from './routes/quiz';
 import { evaluateRouter } from './routes/evaluate';
 import { sessionRouter } from './routes/session';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3727;

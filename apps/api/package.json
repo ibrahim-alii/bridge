@@ -10,6 +10,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@bridge/contracts": "workspace:*",
     "@bridge/shared-utils": "workspace:*",
     "cors": "^2.8.5",
