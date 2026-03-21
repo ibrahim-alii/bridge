@@ -1,40 +1,42 @@
 import { Router, Request, Response } from 'express';
 import { CreateSessionRequestSchema } from '@bridge/contracts';
-import { generateId } from '@bridge/shared-utils';
+import type { CreateSessionRequest, CreateSessionResponse } from '@bridge/contracts';
+import { sessionService } from '../services/session';
 import { validate } from '../validators/validate';
-import type { SessionState, CreateSessionResponse } from '@bridge/contracts';
+import { logger } from '@bridge/shared-utils';
 
 export const sessionRouter = Router();
 
-// In-memory session store (mock)
-const sessions = new Map<string, SessionState>();
+sessionRouter.post('/', validate(CreateSessionRequestSchema), async (req: Request, res: Response) => {
+  try {
+    const request: CreateSessionRequest = req.body;
 
-sessionRouter.post('/', validate(CreateSessionRequestSchema), (req: Request, res: Response) => {
-  const sessionId = generateId();
-  const now = new Date().toISOString();
+    // Create session using session service (backed by Supabase)
+    const state = await sessionService.createSession(request.workspaceId);
 
-  const state: SessionState = {
-    sessionId,
-    isLocked: false,
-    activeGate: null,
-    pendingGates: [],
-    approvals: [],
-    currentAttempts: 0,
-    maxAttempts: 3,
-    createdAt: now,
-  };
+    const response: CreateSessionResponse = {
+      sessionId: state.sessionId,
+      state,
+    };
 
-  sessions.set(sessionId, state);
-
-  const response: CreateSessionResponse = { sessionId, state };
-  res.status(201).json(response);
+    logger.info('Session created', { sessionId: state.sessionId });
+    res.status(201).json(response);
+  } catch (err) {
+    logger.error('Session creation failed', { error: err });
+    res.status(500).json({ error: 'Session creation failed', details: String(err) });
+  }
 });
 
-sessionRouter.get('/:sessionId', (req: Request, res: Response) => {
-  const state = sessions.get(req.params.sessionId);
-  if (!state) {
-    res.status(404).json({ error: 'Session not found' });
-    return;
+sessionRouter.get('/:sessionId', async (req: Request, res: Response) => {
+  try {
+    const state = await sessionService.getSession(req.params.sessionId);
+    if (!state) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    res.json(state);
+  } catch (err) {
+    logger.error('Failed to get session', { error: err });
+    res.status(500).json({ error: 'Failed to get session', details: String(err) });
   }
-  res.json(state);
 });

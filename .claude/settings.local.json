@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(pnpm run build:*)",
+      "mcp__supabase__list_tables"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}
