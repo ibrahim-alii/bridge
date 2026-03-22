@@ -18,6 +18,18 @@ export const CLIENT_SCRIPT = `
     }
   }
 
+  function wireTabs() {
+    const tabs = document.querySelectorAll('.nav-item');
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        const tab = t.getAttribute('data-tab');
+        if (tab) {
+          vscode.postMessage({ type: 'switchTab', tab: tab });
+        }
+      });
+    });
+  }
+
   function wireQuizRadios() {
     const opts = document.querySelectorAll('.option');
     const submit = document.getElementById('btn-submit-quiz');
@@ -53,10 +65,12 @@ export const CLIENT_SCRIPT = `
     if (t.id === 'btn-submit-quiz') {
       const sel = document.querySelector('input[name="quiz-opt"]:checked');
       const idx = sel ? parseInt(sel.value, 10) : -1;
+      const card = document.querySelector('.card[data-question-id]');
+      const qId = card ? card.getAttribute('data-question-id') : '00000000-0000-4000-8000-000000000001';
       if (idx >= 0) {
         vscode.postMessage({
           type: 'submitQuiz',
-          questionId: '00000000-0000-4000-8000-000000000001',
+          questionId: qId,
           selectedIndex: idx,
         });
       }
@@ -94,6 +108,7 @@ export const CLIENT_SCRIPT = `
   });
 
   wireQuizRadios();
+  wireTabs();
   vscode.postMessage({ type: 'requestState' });
 })();
 `;

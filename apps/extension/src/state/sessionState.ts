@@ -95,36 +95,47 @@ export class SessionManager implements vscode.Disposable {
       if (result.suggestedGate !== 'none' && this.state) {
         this.state.isLocked = true;
         this.state.activeGate = result.suggestedGate;
-        this.state.pendingGates.push({
+        const gateInfo = {
           scope: result.suggestedGate,
           analysisId: result.analysisId,
           createdAt: new Date().toISOString(),
-        });
+          metadata: undefined as any,
+        };
+
+        if (result.suggestedGate === 'quiz') {
+          try {
+            const quizResponse = await fetch(`${API_BASE}/quiz`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                analysisId: result.analysisId,
+                code,
+                sessionId: this.state.sessionId,
+              }),
+            });
+            if (quizResponse.ok) {
+              gateInfo.metadata = await quizResponse.json();
+            }
+          } catch (err) {
+            logger.error('Failed to pre-fetch quiz data', { error: err });
+          }
+        }
+
+        this.state.pendingGates.push(gateInfo);
         await this.persist();
       }
 
       return result;
     } catch {
-      logger.warn('Using placeholder analysis — locking for UI preview');
-      const mock: AnalyzeResponse = {
+      logger.warn('Analysis failed, returning placeholder. Connect API for real results.');
+      return {
         analysisId: generateId(),
-        complexity: 5,
+        complexity: 1,
         concepts: ['placeholder'],
-        summary: 'Placeholder analysis — connect API for real results.',
-        suggestedGate: 'quiz',
+        summary: 'Analysis failed — check backend logs.',
+        suggestedGate: 'none',
         gatedBlocks: [],
       };
-      if (this.state && mock.suggestedGate !== 'none') {
-        this.state.isLocked = true;
-        this.state.activeGate = mock.suggestedGate;
-        this.state.pendingGates.push({
-          scope: mock.suggestedGate,
-          analysisId: mock.analysisId,
-          createdAt: new Date().toISOString(),
-        });
-        await this.persist();
-      }
-      return mock;
     }
   }
 

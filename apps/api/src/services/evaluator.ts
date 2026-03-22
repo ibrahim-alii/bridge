@@ -40,16 +40,16 @@ export const evaluatorService = {
     // Retrieve quiz metadata from session
     const metadata = await sessionService.getGateMetadata(session.sessionId, 'quiz');
 
-    if (!metadata || !metadata.quizQuestions) {
-      logger.error('Quiz metadata not found', { sessionId: session.sessionId });
+    if (!metadata || !metadata.questions) {
+      logger.error('Quiz metadata not found', { sessionId: session.sessionId, metadataKeys: metadata ? Object.keys(metadata) : 'null' });
       return {
         correct: false,
         feedback: 'Quiz data not found. Please regenerate the quiz.',
       };
     }
 
-    const quizQuestions = metadata.quizQuestions;
-    const question = quizQuestions.find(
+    const questions = metadata.questions;
+    const question = questions.find(
       (q: any) => q.questionId === request.quizAnswer!.questionId
     );
 

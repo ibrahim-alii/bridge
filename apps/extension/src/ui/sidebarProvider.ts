@@ -8,11 +8,14 @@ import { buildSidebarHtml } from '../webview/sidebarHtml';
 export class BridgeSidebarProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'bridge.sidebarView';
   private _view?: vscode.WebviewView;
+  private _activeTab: string = 'LEARN';
 
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly sessionManager: SessionManager,
-  ) {}
+  ) {
+    this.sessionManager.onDidChangeSession(() => this.refresh());
+  }
 
   resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -80,6 +83,11 @@ export class BridgeSidebarProvider implements vscode.WebviewViewProvider {
           });
           break;
         }
+        case 'switchTab': {
+          this._activeTab = message.tab as string;
+          this.refresh();
+          break;
+        }
         default:
           break;
       }
@@ -93,6 +101,6 @@ export class BridgeSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private renderHtml(): string {
-    return buildSidebarHtml(this.sessionManager.getState());
+    return buildSidebarHtml(this.sessionManager.getState(), this._activeTab);
   }
 }
