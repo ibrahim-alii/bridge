@@ -1,111 +1,246 @@
-/** Shared sidebar webview styles (VS Code theme tokens). */
+/** Custom High-Fidelity Aesthetic for Bridge Extension. */
 export const SIDEBAR_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+  :root {
+    --br-bg: #121212;
+    --br-card: #27272a;
+    --br-card-dark: #18181b;
+    --br-card-black: #09090b;
+    --br-text: #f4f4f5;
+    --br-text-muted: #a1a1aa;
+    --br-primary: #34d399;
+    --br-primary-hover: #10b981;
+    --br-danger: #ef4444;
+    --br-warning: #f97316;
+    --br-border: #3f3f46;
+    --vscode-font-family: 'Outfit', sans-serif;
+  }
+
   * { box-sizing: border-box; }
   body {
-    font-family: var(--vscode-font-family);
-    color: var(--vscode-foreground);
-    background: var(--vscode-sideBar-background);
-    padding: 12px 14px 20px;
+    font-family: 'Outfit', -apple-system, sans-serif;
+    color: var(--br-text);
+    background: var(--br-bg);
+    padding: 0 0 60px 0; /* space for bottom nav */
     margin: 0;
-    font-size: 12px;
-    line-height: 1.45;
+    font-size: 13px;
+    line-height: 1.5;
   }
-  h2 { margin: 0; font-size: 15px; font-weight: 600; }
-  h3 { margin: 0 0 6px 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.85; }
-  p { margin: 0 0 8px 0; opacity: 0.9; }
+  
+  .content-pad {
+    padding: 16px;
+  }
+
+  h2 { margin: 0; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+  h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--br-text-muted); }
+  p { margin: 0 0 12px 0; opacity: 0.9; }
+  
   .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  
   .header {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 10px; margin-bottom: 14px; padding-bottom: 10px;
-    border-bottom: 1px solid var(--vscode-widget-border);
+    padding: 16px;
+    background: var(--br-card-black);
+    border-bottom: 1px solid var(--br-card);
   }
+
+  .logo-text {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-svg { color: var(--br-primary); margin-top: -2px; }
+
   .status-badge {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
   }
   .status-locked {
-    background: color-mix(in srgb, var(--vscode-errorForeground) 22%, transparent);
-    color: var(--vscode-errorForeground);
-    border: 1px solid color-mix(in srgb, var(--vscode-errorForeground) 40%, transparent);
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--br-danger);
+    border: 1px solid rgba(239, 68, 68, 0.4);
   }
   .status-unlocked {
-    background: color-mix(in srgb, var(--vscode-testing-iconPassed) 22%, transparent);
-    color: var(--vscode-testing-iconPassed);
-    border: 1px solid color-mix(in srgb, var(--vscode-testing-iconPassed) 45%, transparent);
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--br-primary);
+    border: 1px solid rgba(52, 211, 153, 0.4);
   }
+
   .card {
-    background: var(--vscode-editor-background);
-    border: 1px solid var(--vscode-panel-border);
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 10px;
+    background: var(--br-card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
-  .card-muted {
-    background: color-mix(in srgb, var(--vscode-editor-background) 92%, var(--vscode-sideBar-background));
+  .card-dark {
+    background: var(--br-card-black);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
-  .gate-label { font-size: 11px; opacity: 0.75; margin-bottom: 4px; }
-  .gate-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .card-warning {
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+  }
+  .card-warning .warning-title {
+    color: var(--br-warning);
+    font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .card-warning .warning-text { color: color-mix(in srgb, var(--br-warning) 80%, white); font-size: 12px; margin: 0; }
+
+  .gate-label { font-size: 11px; color: var(--br-primary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .gate-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+
   textarea, input[type="text"], input[type="number"] {
     width: 100%;
-    min-height: 72px;
-    background: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    border: 1px solid var(--vscode-input-border);
-    border-radius: 6px;
-    padding: 8px;
-    font-family: var(--vscode-editor-font-family);
-    font-size: 12px;
+    min-height: 80px;
+    background: var(--br-card-black);
+    color: var(--br-text);
+    border: 1px solid var(--br-border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 13px;
     resize: vertical;
+    transition: border-color 0.2s;
   }
-  input[type="text"], input[type="number"] { min-height: 32px; resize: none; }
-  .option {
-    display: flex; align-items: flex-start; gap: 8px;
-    padding: 6px 8px; border-radius: 6px; cursor: pointer;
-    border: 1px solid transparent;
+  textarea:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--br-primary);
   }
-  .option:hover { background: var(--vscode-list-hoverBackground); }
-  .option input { margin-top: 2px; }
-  .option span { flex: 1; }
-  .option.selected {
-    border-color: var(--vscode-focusBorder);
-    background: var(--vscode-list-activeSelectionBackground);
+  input[type="text"], input[type="number"] { min-height: 40px; resize: none; }
+  
+  .chat-input-wrapper {
+    position: relative;
+    border-radius: 8px;
+    background: var(--br-card-black);
+    border: 1px solid var(--br-border);
+    display: flex; align-items: center;
+    padding-right: 12px;
   }
-  button {
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    border: none; padding: 7px 14px; border-radius: 6px;
-    cursor: pointer; font-size: 12px; font-weight: 500;
-  }
-  button:hover { background: var(--vscode-button-hoverBackground); }
-  button.secondary {
+  .chat-input-wrapper textarea {
+    border: none;
     background: transparent;
-    color: var(--vscode-textLink-foreground);
-    border: 1px solid var(--vscode-panel-border);
+    min-height: 50px;
+    margin: 0;
   }
-  button.secondary:hover {
-    background: var(--vscode-toolbar-hoverBackground);
+  .chat-input-wrapper textarea:focus { border-color: transparent; }
+  .chat-submit-icon {
+    color: var(--br-primary);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s;
   }
-  button:disabled { opacity: 0.45; cursor: not-allowed; }
-  .feedback { margin-top: 10px; padding: 8px; border-radius: 6px; font-size: 12px; }
-  .feedback.ok {
-    background: color-mix(in srgb, var(--vscode-testing-iconPassed) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--vscode-testing-iconPassed) 35%, transparent);
+  .chat-submit-icon:hover { transform: scale(1.1); }
+
+  .code-block {
+    background: var(--br-card-black);
+    border-left: 2px solid var(--br-primary);
+    padding: 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    color: #a6e22e;
   }
-  .feedback.err {
-    background: color-mix(in srgb, var(--vscode-errorForeground) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--vscode-errorForeground) 30%, transparent);
+
+  .option {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 8px; cursor: pointer;
+    background: var(--br-card-black);
+    margin-bottom: 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
   }
-  .hint {
-    margin-top: 8px; font-size: 11px; opacity: 0.9;
-    border-left: 2px solid var(--vscode-textLink-foreground);
-    padding-left: 8px;
+  .option:hover { border-color: var(--br-border); }
+  .custom-radio {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--br-text-muted);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
   }
-  .stats { font-size: 11px; opacity: 0.65; margin-top: 12px; }
-  .no-session { text-align: center; padding: 28px 8px; }
-  .mentor-box { font-size: 12px; white-space: pre-wrap; }
-  .placeholder-tag {
-    display: inline-block; font-size: 10px; text-transform: uppercase;
-    letter-spacing: 0.06em; opacity: 0.55; margin-bottom: 6px;
+  .option input { display: none; }
+  .option span { flex: 1; font-size: 13px; }
+  .option.selected {
+    border-color: var(--br-primary);
   }
+  .option.selected .custom-radio {
+    border-color: var(--br-primary);
+  }
+  .option.selected .custom-radio::after {
+    content: '';
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--br-primary);
+  }
+
+  button {
+    background: var(--br-primary);
+    color: #000;
+    border: none; padding: 12px 16px; border-radius: 8px;
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    width: 100%;
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+    transition: background 0.2s;
+  }
+  button:hover { background: var(--br-primary-hover); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .badge-inserted {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--br-primary);
+    padding: 6px 10px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; margin-bottom: 12px;
+  }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: var(--br-card-black);
+    border-top: 1px solid var(--br-border);
+    display: flex; justify-content: space-around; align-items: center;
+    z-index: 100;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    color: var(--br-text-muted);
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    cursor: pointer;
+  }
+  .nav-item.active { color: var(--br-primary); border-top: 2px solid var(--br-primary); padding-top: 6px; margin-top: -8px; }
+  .nav-item svg { width: 22px; height: 22px; }
+
+  .feedback { margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 12px; }
+  .feedback.ok { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--br-primary); }
+  .feedback.err { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--br-danger); }
+
+  .mentor-header { display: flex; align-items: center; gap: 8px; color: var(--br-text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; margin-top: 24px;}
+  .mentor-header svg { color: var(--br-primary); }
+  
+  .mentor-bubble {
+    background: var(--br-card);
+    padding: 12px; border-radius: 8px;
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .mentor-bubble svg { color: var(--br-text-muted); flex-shrink: 0; width: 20px; height: 20px; }
+  
+  .mentor-box { font-size: 13px; }
+  
+  .hidden { display: none !important; }
 `;
