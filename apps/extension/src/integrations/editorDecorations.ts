@@ -15,6 +15,9 @@ const blankDecorationType = vscode.window.createTextEditorDecorationType({
 
 let activeBlanks: vscode.Range[] = [];
 
+// Store gate decorations per document URI
+const gateDecorations = new Map<string, Array<{ range: vscode.Range; reason: string }>>();
+
 /**
  * Scans the active editor for Bridge blanking comments and applies the redaction style.
  */
@@ -49,6 +52,84 @@ export function unlockDecorations(editor: vscode.TextEditor | undefined) {
   vscode.window.showInformationMessage("Bridge: Concept understood. Code unlocked.");
 
   // Optional hackathon polish: Automatically delete the placeholder comments now that it's unlocked
+}
+
+/**
+ * Apply gate decorations based on line ranges from backend analysis
+ */
+export function applyGateDecorations(
+  editor: vscode.TextEditor,
+  blocks: Array<{ startLine: number; endLine: number; reason: string }>
+): void {
+  if (!editor || blocks.length === 0) {
+    return;
+  }
+
+  const decorations: Array<{ range: vscode.Range; reason: string }> = [];
+
+  for (const block of blocks) {
+    // Convert 1-based line numbers to 0-based VSCode positions
+    const startPos = new vscode.Position(block.startLine - 1, 0);
+    const endPos = new vscode.Position(block.endLine - 1, Number.MAX_SAFE_INTEGER);
+    const range = new vscode.Range(startPos, endPos);
+
+    decorations.push({ range, reason: block.reason });
+  }
+
+  // Store decorations for this document
+  gateDecorations.set(editor.document.uri.toString(), decorations);
+
+  // Apply visual decorations
+  const ranges = decorations.map(d => d.range);
+  editor.setDecorations(blankDecorationType, ranges);
+}
+
+/**
+ * Clear all gate decorations for a specific editor
+ */
+export function clearGateDecorations(editor: vscode.TextEditor): void {
+  if (!editor) {
+    return;
+  }
+
+  gateDecorations.delete(editor.document.uri.toString());
+  editor.setDecorations(blankDecorationType, []);
+}
+
+/**
+ * Unlock a specific block by index (for progressive unlocking)
+ */
+export function unlockSpecificBlock(editor: vscode.TextEditor, blockIndex: number): void {
+  if (!editor) {
+    return;
+  }
+
+  const uri = editor.document.uri.toString();
+  const decorations = gateDecorations.get(uri);
+
+  if (!decorations || blockIndex >= decorations.length) {
+    return;
+  }
+
+  // Remove the specific block
+  decorations.splice(blockIndex, 1);
+
+  if (decorations.length === 0) {
+    // All blocks unlocked
+    gateDecorations.delete(uri);
+    editor.setDecorations(blankDecorationType, []);
+  } else {
+    // Update with remaining blocks
+    const ranges = decorations.map(d => d.range);
+    editor.setDecorations(blankDecorationType, ranges);
+  }
+}
+
+/**
+ * Get active gate decorations for a document
+ */
+export function getGateDecorations(uri: string): Array<{ range: vscode.Range; reason: string }> | undefined {
+  return gateDecorations.get(uri);
 }
 
 /**

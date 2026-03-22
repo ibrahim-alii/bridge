@@ -7,6 +7,8 @@ import { logger } from '@bridge/shared-utils';
 import { WorkspaceManager } from './integrations/workspace';
 import { GitManager } from './integrations/git';
 import { EventRouter } from './integrations/router';
+import { ClaudeCodeGateManager } from './integrations/claudeCodeGating';
+import { registerPatternGating } from './integrations/editorDecorations';
 
 export function activate(context: vscode.ExtensionContext) {
   logger.info('Bridge extension activating...');
@@ -30,6 +32,27 @@ export function activate(context: vscode.ExtensionContext) {
   const eventRouter = new EventRouter(workspaceManager, gitManager, sessionManager);
 
   context.subscriptions.push(workspaceManager, eventRouter);
+
+  // Initialize and register the Claude Code gate manager
+  const gateManager = new ClaudeCodeGateManager(sessionManager);
+  gateManager.registerEditPrevention(context);
+  
+  // Register visual pattern gating (redaction)
+  registerPatternGating(context);
+
+  // Link workspace file saves to the gate manager
+  context.subscriptions.push(
+    workspaceManager.onDidChangeFile(async (uri) => {
+      const document = await vscode.workspace.openTextDocument(uri);
+      await gateManager.handleFileSave(document);
+    })
+  );
+
+  context.subscriptions.push(
+    sessionManager.onDidUnlockGate(() => {
+      gateManager.unlockCurrentBlock();
+    })
+  );
   
   // Auto-start session if none exists
   const maybeStart = async () => {

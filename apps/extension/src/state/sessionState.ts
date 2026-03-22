@@ -19,6 +19,8 @@ export class SessionManager implements vscode.Disposable {
   private readonly context: vscode.ExtensionContext;
   private readonly _onDidChangeSession = new vscode.EventEmitter<SessionState | null>();
   readonly onDidChangeSession = this._onDidChangeSession.event;
+  private readonly _onDidUnlockGate = new vscode.EventEmitter<void>();
+  readonly onDidUnlockGate = this._onDidUnlockGate.event;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -99,7 +101,10 @@ export class SessionManager implements vscode.Disposable {
           scope: result.suggestedGate,
           analysisId: result.analysisId,
           createdAt: new Date().toISOString(),
-          metadata: undefined as any,
+          metadata: {
+            gatedBlocks: result.gatedBlocks,
+            filePath
+          } as any,
         };
 
         if (result.suggestedGate === 'quiz') {
@@ -291,7 +296,29 @@ export class SessionManager implements vscode.Disposable {
       this.state.activeGate = this.state.pendingGates[0].scope;
     }
 
+    this._onDidUnlockGate.fire();
     await this.persist();
+  }
+
+  getCurrentGateFilePath(): string | undefined {
+    // Try to find file path in the active gate metadata
+    if (this.state?.pendingGates.length) {
+      return this.state.pendingGates[0].metadata?.filePath;
+    }
+    return undefined;
+  }
+
+  getCurrentBlockIndex(): number {
+    // For simplicity, we assume we're always working on the first pending block
+    // A more advanced version would track which block is currently focused in the UI
+    return 0;
+  }
+
+  getAllGatedBlocks(): Array<{ startLine: number; endLine: number; reason: string }> | undefined {
+    if (this.state?.pendingGates.length) {
+      return this.state.pendingGates[0].metadata?.gatedBlocks;
+    }
+    return undefined;
   }
 
   private async persist(): Promise<void> {
