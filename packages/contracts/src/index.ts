@@ -68,6 +68,26 @@ export type {
   StudyRecommendationResponse,
 } from './study';
 
+// ─── Bounty ─────────────────────────────────────────────────────────
+export {
+  SmellTypeSchema,
+  BountyAnalyzeRequestSchema,
+  BountyAnalyzeResponseSchema,
+  BountyChallengeRequestSchema,
+  BountyChallengeResponseSchema,
+  BountyEvaluateRequestSchema,
+  BountyEvaluateResponseSchema,
+} from './bounty';
+export type {
+  SmellType,
+  BountyAnalyzeRequest,
+  BountyAnalyzeResponse,
+  BountyChallengeRequest,
+  BountyChallengeResponse,
+  BountyEvaluateRequest,
+  BountyEvaluateResponse,
+} from './bounty';
+
 // ─── Session ────────────────────────────────────────────────────────
 export {
   GateScopeSchema,

@@ -12,6 +12,7 @@ import { blankRouter } from './routes/blank';
 import { sabotageRouter } from './routes/sabotage';
 import { mentorRouter } from './routes/mentor';
 import { studyRouter } from './routes/study';
+import { bountyRouter } from './routes/bounty';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
 
@@ -57,6 +58,7 @@ app.use('/api/blank', blankRouter);
 app.use('/api/sabotage', sabotageRouter);
 app.use('/api/mentor', mentorRouter);
 app.use('/api/study', studyRouter);
+app.use('/api/bounty', bountyRouter);
 
 // ─── Start ────────────────────────────────────────────────────────
 const server = app.listen(PORT, () => {
