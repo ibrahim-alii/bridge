@@ -111,11 +111,15 @@ ${request.expectedPattern}
 ## Evaluation Rules:
 1. The user does NOT need to write exact code — they need to explain what the hidden section DOES
 2. Check for conceptual correctness: does the explanation match what the code actually does?
-3. Check for required concepts: does the explanation mention the key operations/patterns?
-4. Check for contradictions: does the explanation say anything obviously wrong?
-5. Be slightly lenient — if the user shows the core idea, pass them even if some details are fuzzy
-6. Keep feedback brief: 1-2 sentences, max 35 words
-7. If they're close but missing something, give a helpful short hint without revealing the answer
+3. Prefer high-level understanding over exhaustive detail: they do NOT need to mention every branch, loop, retry, recursive call, validation path, prompt, or follow-up message
+4. Missing secondary behaviors like "invalid choice, try again" handling should NOT cause failure if they correctly describe the main job of the code
+5. Check for contradictions only if the user says something materially wrong about the main behavior
+6. Be very lenient — if the user shows the core idea or overall functionality, pass them even if some details are fuzzy or omitted
+7. Do NOT require incidental specifics like print/log statements, exact variable names, exact ordering of minor steps, or exact wording unless those details are essential to behavior
+8. Prefer passing answers that would let a reviewer conclude the user understands the section's purpose and effect
+9. If the explanation is broadly right but incomplete, mark it as passed
+10. Keep feedback brief: 1-2 sentences, max 35 words
+11. If they're clearly missing the main purpose, give a helpful short hint without revealing the answer
 
 Return a JSON object:
 {

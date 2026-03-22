@@ -5,12 +5,18 @@ export const evaluateService = {
   async evaluate(request: EvaluateRequest): Promise<EvaluateResponse> {
     if (request.scope === 'quiz' && request.quizAnswer) {
       const metadata = await sessionService.getGateMetadata(request.sessionId, 'quiz');
-      if (!metadata || !metadata.quizQuestions) {
+      const questions = Array.isArray(metadata?.questions)
+        ? metadata.questions
+        : Array.isArray(metadata?.quizQuestions)
+          ? metadata.quizQuestions
+          : null;
+
+      if (!metadata || !questions) {
         throw new Error('No active quiz found for this session');
       }
 
-      const question = metadata.quizQuestions.find(
-        (q: any) => q.questionId === request.quizAnswer!.questionId
+      const question = questions.find(
+        (q: any) => String(q.questionId) === String(request.quizAnswer!.questionId)
       );
 
       if (!question) {

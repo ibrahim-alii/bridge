@@ -68,8 +68,11 @@ ${limitedUserCode}
 \`\`\`
 
 Reply in JSON format: {"correct": boolean, "feedback": "...", "hint": "..."}
-Focus on functional correctness, not style.
-Be slightly lenient: accept answers that capture the core behavior even if names, structure, or wording differ.
+Focus on overall functional correctness, not exact implementation details.
+Be clearly lenient: accept answers that capture the main behavior and outcome even if names, structure, control flow, or wording differ.
+Ignore non-essential differences such as print statements, console logging, comments, formatting, helper extraction, or other incidental side effects unless they change the main result.
+Do not require every branch or edge case to be mentioned. Missing retries, validation messages, recursive re-prompts, or secondary control flow should still pass if the main task is correct.
+Pass the answer if a reasonable engineer would say it solves the same core task as the reference.
 Keep feedback short: 1-2 sentences, max 35 words.
 If incorrect, mention the biggest mismatch briefly and give a short hint without sounding harsh.`,
           },
@@ -169,7 +172,9 @@ USER'S EXPLANATION:
 ${limitedExplanation}
 
 Reply in JSON format: {"correct": boolean, "feedback": "...", "hint": "..."}
-Be slightly lenient: award credit if they explain the main change and purpose, even if details are incomplete or phrasing is imperfect.
+Be clearly lenient: award credit if they explain the main change and purpose, even if details are incomplete or phrasing is imperfect.
+Do not fail them for omitting incidental implementation specifics like print statements, logging, exact variable names, or minor refactor details.
+Pass the answer if it captures the overall functionality or purpose of the change.
 Keep feedback short: 1-2 sentences, max 35 words.
 If incorrect, name the main gap briefly and provide a short hint.`,
           },

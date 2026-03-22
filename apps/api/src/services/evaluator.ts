@@ -40,7 +40,13 @@ export const evaluatorService = {
     // Retrieve quiz metadata from session
     const metadata = await sessionService.getGateMetadata(session.sessionId, 'quiz');
 
-    if (!metadata || !metadata.questions) {
+    const questions = Array.isArray(metadata?.questions)
+      ? metadata.questions
+      : Array.isArray(metadata?.quizQuestions)
+        ? metadata.quizQuestions
+        : null;
+
+    if (!metadata || !questions) {
       logger.error('Quiz metadata not found', { sessionId: session.sessionId, metadataKeys: metadata ? Object.keys(metadata) : 'null' });
       return {
         correct: false,
@@ -48,19 +54,19 @@ export const evaluatorService = {
       };
     }
 
-    const questions = metadata.questions;
     const question = questions.find(
-      (q: any) => q.questionId === request.quizAnswer!.questionId
+      (q: any) => String(q.questionId) === String(request.quizAnswer!.questionId)
     );
 
     if (!question) {
       logger.error('Quiz question not found', {
         sessionId: session.sessionId,
         questionId: request.quizAnswer.questionId,
+        availableQuestionIds: questions.map((q: any) => q?.questionId).filter(Boolean),
       });
       return {
         correct: false,
-        feedback: 'Quiz question not found.',
+        feedback: 'That quiz question is no longer active for this session. Please regenerate the quiz and try again.',
       };
     }
 
