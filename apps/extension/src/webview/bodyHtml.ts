@@ -78,28 +78,28 @@ export function renderSidebarBody(state: SessionState | null, activeTab: string 
     </div>
   `;
 
-  if (!locked) {
-    return `
-      ${header}
-      <div class="content-pad">
-        ${activeTab === 'LEARN' ? `
-          <div class="card card-dark">
-            <div class="gate-title">No active gates</div>
-            <p>Run <strong>Bridge: Analyze Current File</strong> when the backend is connected.</p>
-          </div>
-        ` : activeTab === 'CHAT' ? renderMentorSection(state) : '<div class="card card-dark"><p>Settings coming soon.</p></div>'}
+  const learnContent = !locked
+    ? `
+      <div class="card card-dark">
+        <div class="gate-title">No active gates</div>
+        <p>Run <strong>Bridge: Analyze Current File</strong> when the backend is connected.</p>
       </div>
-      ${bottomNav}
-    `;
-  }
-
-  const gateSection = renderGateSection(state);
+    `
+    : renderGateSection(state);
   const chatContent = renderMentorSection(state);
 
   return `
     ${header}
     <div class="content-pad">
-      ${activeTab === 'LEARN' ? gateSection : activeTab === 'CHAT' ? chatContent : '<div class="card card-dark"><p>Settings coming soon.</p></div>'}
+      <section data-panel="LEARN" class="${activeTab === 'LEARN' ? '' : 'hidden'}">
+        ${learnContent}
+      </section>
+      <section data-panel="CHAT" class="${activeTab === 'CHAT' ? '' : 'hidden'}">
+        ${chatContent}
+      </section>
+      <section data-panel="SETTINGS" class="${activeTab === 'SETTINGS' ? '' : 'hidden'}">
+        <div class="card card-dark"><p>Settings coming soon.</p></div>
+      </section>
     </div>
     ${bottomNav}
   `;
@@ -121,9 +121,12 @@ function renderMentorSection(state: SessionState): string {
     <div class="mentor-header">
       ${ICONS.bulb} SOCRATIC MENTOR
     </div>
-    
-    <div id="mentor-out" class="mentor-box hidden"></div>
-    <div id="study-out" class="mentor-box hidden" style="margin-top: 12px;"></div>
+
+    <div id="mentor-thread" class="mentor-thread">
+      <div class="mentor-box mentor-box-assistant">${esc(workflowCopy)}</div>
+    </div>
+    <div id="mentor-out" class="mentor-box mentor-box-assistant hidden"></div>
+    <div id="study-out" class="mentor-box mentor-box-resource hidden" style="margin-top: 12px;"></div>
 
     <div class="chat-input-wrapper">
       <textarea id="mentor-input-answer" placeholder="Ask about architecture..."></textarea>

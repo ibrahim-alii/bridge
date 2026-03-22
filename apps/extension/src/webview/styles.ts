@@ -232,15 +232,42 @@ export const SIDEBAR_STYLES = `
   .mentor-header { display: flex; align-items: center; gap: 8px; color: var(--br-text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; margin-top: 24px;}
   .mentor-header svg { color: var(--br-primary); }
   
-  .mentor-bubble {
-    background: var(--br-card);
-    padding: 12px; border-radius: 8px;
-    display: flex; gap: 12px; align-items: flex-start;
+  .mentor-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     margin-bottom: 12px;
   }
-  .mentor-bubble svg { color: var(--br-text-muted); flex-shrink: 0; width: 20px; height: 20px; }
-  
-  .mentor-box { font-size: 13px; }
+
+  .mentor-box {
+    font-size: 13px;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--br-border);
+  }
+
+  .mentor-box-assistant {
+    background: var(--br-card);
+    color: var(--br-text);
+  }
+
+  .mentor-box-user {
+    background: rgba(52, 211, 153, 0.12);
+    border-color: rgba(52, 211, 153, 0.3);
+    color: var(--br-text);
+    margin-left: 20px;
+  }
+
+  .mentor-box-resource {
+    background: var(--br-card-black);
+    color: var(--br-text);
+  }
+
+  .mentor-box-loading {
+    opacity: 0.8;
+  }
   
   .hidden { display: none !important; }
 `;
