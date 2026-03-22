@@ -2,14 +2,16 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Bridge Extension",
+      "name": "Launch Extension",
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}",
+        "--new-window",
         "--extensionDevelopmentPath=${workspaceFolder}/apps/extension"
       ],
-      "outFiles": ["${workspaceFolder}/apps/extension/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/apps/extension/dist/**/*.js"
+      ],
       "preLaunchTask": "build-extension"
     }
   ]

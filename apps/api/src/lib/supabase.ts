@@ -1,5 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@bridge/shared-utils';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Ensure env vars are available even when modules are imported before server bootstrap.
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env'), override: false });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '..', '.env'), override: false });
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || '';
