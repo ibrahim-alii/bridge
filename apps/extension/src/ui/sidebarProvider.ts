@@ -42,6 +42,7 @@ export class BridgeSidebarProvider implements vscode.WebviewViewProvider {
           const result = await this.sessionManager.submitQuizAnswer(
             message.questionId as string,
             message.selectedIndex as number,
+            message.correctIndex as number,
           );
           webviewView.webview.postMessage({
             type: 'evaluationResult',
