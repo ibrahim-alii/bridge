@@ -13,6 +13,7 @@ import { sabotageRouter } from './routes/sabotage';
 import { mentorRouter } from './routes/mentor';
 import { studyRouter } from './routes/study';
 import { bountyRouter } from './routes/bounty';
+import { commitRouter } from './routes/commit';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
 
@@ -44,7 +45,6 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
-    mockMode: process.env.BRIDGE_MOCK_MODE === 'true',
     timestamp: new Date().toISOString(),
   });
 });
@@ -59,12 +59,11 @@ app.use('/api/sabotage', sabotageRouter);
 app.use('/api/mentor', mentorRouter);
 app.use('/api/study', studyRouter);
 app.use('/api/bounty', bountyRouter);
+app.use('/api/commit', commitRouter);
 
 // ─── Start ────────────────────────────────────────────────────────
 const server = app.listen(PORT, () => {
-  logger.info(`Bridge API running on http://localhost:${PORT}`, {
-    mockMode: process.env.BRIDGE_MOCK_MODE === 'true',
-  });
+  logger.info(`Bridge API running on http://localhost:${PORT}`);
 });
 
 server.on('error', async (error: NodeJS.ErrnoException) => {

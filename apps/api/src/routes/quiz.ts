@@ -24,6 +24,10 @@ quizRouter.post('/', validate(QuizRequestSchema), async (req: Request, res: Resp
         questions: result.questions, // Consistent with frontend expectation
       },
     });
+    await sessionService.updateSession(request.sessionId, {
+      isLocked: true,
+      activeGate: 'quiz',
+    });
 
     // Sanitize response - remove correctIndex to prevent client from seeing the answer
     const sanitized: QuizResponse = {

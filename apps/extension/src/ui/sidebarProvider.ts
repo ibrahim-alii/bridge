@@ -32,64 +32,78 @@ export class BridgeSidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = this.renderHtml();
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      switch (message.type) {
-        case 'submitAnswer': {
-          const result = await this.sessionManager.submitAnswer(message.answer as string);
-          webviewView.webview.postMessage({
-            type: 'evaluationResult',
-            ...result,
-          });
-          break;
+      try {
+        switch (message.type) {
+          case 'submitAnswer': {
+            const result = await this.sessionManager.submitAnswer(message.answer as string);
+            webviewView.webview.postMessage({
+              type: 'evaluationResult',
+              ...result,
+            });
+            break;
+          }
+          case 'submitQuiz': {
+            const result = await this.sessionManager.submitQuizAnswer(
+              message.questionId as string,
+              message.selectedIndex as number,
+            );
+            webviewView.webview.postMessage({
+              type: 'evaluationResult',
+              ...result,
+            });
+            break;
+          }
+          case 'submitBug': {
+            const result = await this.sessionManager.submitBugAnswer(
+              message.identifiedLine as number,
+              message.explanation as string,
+            );
+            webviewView.webview.postMessage({
+              type: 'evaluationResult',
+              ...result,
+            });
+            break;
+          }
+          case 'requestMentorHint': {
+            const result = await this.sessionManager.requestMentorHint(message.question as string);
+            webviewView.webview.postMessage({
+              type: 'mentorHint',
+              ...result,
+            });
+            break;
+          }
+          case 'requestStudyRecommendation': {
+            const result = await this.sessionManager.requestStudyRecommendation();
+            webviewView.webview.postMessage({
+              type: 'studyRecommendation',
+              ...result,
+            });
+            break;
+          }
+          case 'startSession': {
+            await this.sessionManager.createSession();
+            this.refresh();
+            break;
+          }
+          case 'requestState': {
+            webviewView.webview.postMessage({
+              type: 'stateUpdate',
+              state: this.sessionManager.getState(),
+            });
+            break;
+          }
+          case 'switchTab': {
+            this._activeTab = message.tab as string;
+            break;
+          }
+          default:
+            break;
         }
-        case 'submitQuiz': {
-          const result = await this.sessionManager.submitQuizAnswer(
-            message.questionId as string,
-            message.selectedIndex as number,
-          );
-          webviewView.webview.postMessage({
-            type: 'evaluationResult',
-            ...result,
-          });
-          break;
-        }
-        case 'submitBug': {
-          const result = await this.sessionManager.submitBugAnswer(
-            message.identifiedLine as number,
-            message.explanation as string,
-          );
-          webviewView.webview.postMessage({
-            type: 'evaluationResult',
-            ...result,
-          });
-          break;
-        }
-        case 'requestMentorHint': {
-          const { hint } = await this.sessionManager.requestMentorHint();
-          webviewView.webview.postMessage({
-            type: 'mentorHint',
-            hint,
-          });
-          break;
-        }
-        case 'startSession': {
-          await this.sessionManager.createSession();
-          this.refresh();
-          break;
-        }
-        case 'requestState': {
-          webviewView.webview.postMessage({
-            type: 'stateUpdate',
-            state: this.sessionManager.getState(),
-          });
-          break;
-        }
-        case 'switchTab': {
-          this._activeTab = message.tab as string;
-          this.refresh();
-          break;
-        }
-        default:
-          break;
+      } catch (error) {
+        webviewView.webview.postMessage({
+          type: 'actionError',
+          message: error instanceof Error ? error.message : String(error),
+        });
       }
     });
   }

@@ -41,6 +41,22 @@ export class EventRouter implements vscode.Disposable {
 
   private async processChange(uri: vscode.Uri) {
     try {
+      const currentState = this.sessionManager.getState();
+      if (currentState?.isLocked) {
+        logger.debug('EventRouter: Skipping delayed analysis because session is now locked');
+        return;
+      }
+
+      const openDocument = vscode.workspace.textDocuments.find(
+        (document) => document.uri.toString() === uri.toString(),
+      );
+      if (openDocument?.isDirty) {
+        logger.debug('EventRouter: Skipping delayed analysis for unsaved document', {
+          file: uri.fsPath,
+        });
+        return;
+      }
+
       logger.debug('EventRouter: Processing changes for', { file: uri.fsPath });
       
       let codeToAnalyze = '';

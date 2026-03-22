@@ -6,28 +6,51 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
-const isMockMode = process.env.BRIDGE_MOCK_MODE === 'true';
+const EVALUATION_MODEL = 'claude-sonnet-4-20250514';
+
+function parseEvaluationPayload(responseText: string): {
+  correct?: boolean;
+  feedback?: string;
+  hint?: string;
+} {
+  const trimmed = responseText.trim();
+
+  const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const normalized = fencedMatch ? fencedMatch[1].trim() : trimmed;
+
+  try {
+    return JSON.parse(normalized) as {
+      correct?: boolean;
+      feedback?: string;
+      hint?: string;
+    };
+  } catch (error) {
+    const objectMatch = normalized.match(/\{[\s\S]*\}/);
+    if (objectMatch) {
+      return JSON.parse(objectMatch[0]) as {
+        correct?: boolean;
+        feedback?: string;
+        hint?: string;
+      };
+    }
+
+    throw error;
+  }
+}
 
 export const llmClient = {
   /**
    * Evaluates a blank-fill answer by comparing user's code to reference code.
-   * Uses Claude Haiku for token efficiency.
+   * Uses Claude for token-efficient grading.
    */
   async evaluateBlank(userCode: string, referenceCode: string): Promise<EvaluationResult> {
-    if (isMockMode) {
-      return {
-        correct: true,
-        feedback: 'Mock mode: blank answer accepted',
-      };
-    }
-
     try {
       // Limit context size to reduce token usage
       const limitedUserCode = userCode.slice(0, 500);
       const limitedReferenceCode = referenceCode.slice(0, 500);
 
       const message = await anthropic.messages.create({
-        model: 'claude-haiku-4',
+        model: EVALUATION_MODEL,
         max_tokens: 300,
         messages: [
           {
@@ -51,7 +74,7 @@ Focus on functional correctness, not style. Be encouraging if correct, provide a
       });
 
       const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-      const parsed = JSON.parse(responseText);
+      const parsed = parseEvaluationPayload(responseText);
 
       return {
         correct: parsed.correct ?? false,
@@ -59,10 +82,10 @@ Focus on functional correctness, not style. Be encouraging if correct, provide a
         hint: parsed.hint,
       };
     } catch (err) {
-      logger.warn('LLM evaluation failed for blank-fill, using permissive fallback', { error: err });
+      logger.warn('LLM evaluation failed for blank-fill', { error: err });
       return {
-        correct: true, // PERMISSIVE FALLBACK
-        feedback: '⚠️ Automatic validation unavailable. Answer accepted with caution.',
+        correct: false,
+        feedback: 'Automatic validation is currently unavailable. Please try again once the model backend is healthy.',
       };
     }
   },
@@ -76,19 +99,12 @@ Focus on functional correctness, not style. Be encouraging if correct, provide a
     actualBugLine: number,
     identifiedLine: number
   ): Promise<EvaluationResult> {
-    if (isMockMode) {
-      return {
-        correct: true,
-        feedback: 'Mock mode: bug identification accepted',
-      };
-    }
-
     try {
       // Limit explanation length
       const limitedExplanation = explanation.slice(0, 500);
 
       const message = await anthropic.messages.create({
-        model: 'claude-haiku-4',
+        model: EVALUATION_MODEL,
         max_tokens: 300,
         messages: [
           {
@@ -107,7 +123,7 @@ Award credit if the explanation shows understanding even if the line number is s
       });
 
       const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-      const parsed = JSON.parse(responseText);
+      const parsed = parseEvaluationPayload(responseText);
 
       return {
         correct: parsed.correct ?? false,
@@ -115,33 +131,26 @@ Award credit if the explanation shows understanding even if the line number is s
         hint: parsed.hint,
       };
     } catch (err) {
-      logger.warn('LLM evaluation failed for bug-hunt, using permissive fallback', { error: err });
+      logger.warn('LLM evaluation failed for bug-hunt', { error: err });
       return {
-        correct: true, // PERMISSIVE FALLBACK
-        feedback: '⚠️ Automatic validation unavailable. Answer accepted with caution.',
+        correct: false,
+        feedback: 'Automatic bug evaluation is currently unavailable. Please try again once the model backend is healthy.',
       };
     }
   },
 
   /**
    * Evaluates a commit explanation by comparing it to the diff context.
-   * Uses Claude Haiku to check for understanding.
+   * Uses Claude to check for understanding.
    */
   async evaluateCommit(explanation: string, diffSummary: string): Promise<EvaluationResult> {
-    if (isMockMode) {
-      return {
-        correct: true,
-        feedback: 'Mock mode: commit explanation accepted',
-      };
-    }
-
     try {
       // Limit context sizes
       const limitedExplanation = explanation.slice(0, 500);
       const limitedDiff = diffSummary.slice(0, 500);
 
       const message = await anthropic.messages.create({
-        model: 'claude-haiku-4',
+        model: EVALUATION_MODEL,
         max_tokens: 300,
         messages: [
           {
@@ -161,7 +170,7 @@ Award credit if they demonstrate understanding of what changed and why, even if 
       });
 
       const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-      const parsed = JSON.parse(responseText);
+      const parsed = parseEvaluationPayload(responseText);
 
       return {
         correct: parsed.correct ?? false,
@@ -169,12 +178,12 @@ Award credit if they demonstrate understanding of what changed and why, even if 
         hint: parsed.hint,
       };
     } catch (err) {
-      logger.warn('LLM evaluation failed for commit explanation, using permissive fallback', {
+      logger.warn('LLM evaluation failed for commit explanation', {
         error: err,
       });
       return {
-        correct: true, // PERMISSIVE FALLBACK
-        feedback: '⚠️ Automatic validation unavailable. Answer accepted with caution.',
+        correct: false,
+        feedback: 'Automatic commit review is currently unavailable. Please try again once the model backend is healthy.',
       };
     }
   },

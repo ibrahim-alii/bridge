@@ -50,8 +50,6 @@ export function unlockDecorations(editor: vscode.TextEditor | undefined) {
   // Clear the decorations
   editor.setDecorations(blankDecorationType, []);
   vscode.window.showInformationMessage("Bridge: Concept understood. Code unlocked.");
-
-  // Optional hackathon polish: Automatically delete the placeholder comments now that it's unlocked
 }
 
 /**

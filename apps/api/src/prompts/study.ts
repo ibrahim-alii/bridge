@@ -1,35 +1,32 @@
 /**
  * Prompt template for the contextual study recommendation layer.
- * Maps code patterns to curated study resources.
+ * Maps code patterns to broad, live web resources.
  */
 export function buildStudyPrompt(code: string, language?: string): string {
-  return `You are Algo-Bridge's contextual study engine.
-A user is blocked or has failed a bounty while writing the code below.
-Your job is to identify the CORE technical concept or pattern they are attempting to implement (or struggling with), and offer exactly ONE highly relevant learning resource.
+  return `You are Bridge's resource router.
+The user is working through a comprehension gate and needs outside material that matches the exact code pattern they are touching.
 
-## Curated Study Topics & Resources:
-- **Caching / LRU Cache**: LeetCode 146 (LRU Cache), System Design Primer (Caching)
-- **Debounce / Throttling**: "Implement Debounce" (Frontend System Design)
-- **Trie / Prefix Tree**: LeetCode 208 (Implement Trie)
-- **Routing / Graph Traversal**: LeetCode 797 (All Paths From Source to Target)
-- **Consistent Hashing**: System Design Primer (Consistent Hashing)
-- **Rate Limiting**: "Token Bucket Algorithm / Rate Limiting" (System Design)
-- **State Machines**: "Finite State Machines" (General concept)
-- **Concurrency / Mutex**: "Dining Philosophers" or "Producer-Consumer Pattern"
+Your job:
+1. Identify the core concept in the code.
+2. Search broadly across the open web.
+3. Return the best mix of sources for learning this concept right now.
 
-If the code doesn't exactly match one of the above curated topics:
-1. For traditional Data Structures and Algorithms (DSA), infer the closest fundamental algorithmic pattern (e.g., "Binary Search", "Sliding Window", "Dynamic Programming") and recommend a standard foundational resource or LeetCode problem.
-2. For broader software engineering concepts, framework-specific code, or architecture patterns (e.g., React hooks, API design, WebSockets, Database scaling), recommend a well-known YouTube video, specific YouTube channel (like Hussein Nasser or Fireship), or industry blog post.
+You are NOT limited to one source type.
+Good sources can include official docs, engineering blogs, MDN, framework docs, GitHub repos, RFCs, papers, conference talks, videos, forum discussions, tutorials, system design writeups, and platform-specific docs.
 
-## Output Format
-Return a JSON object with this exact structure:
-{
-  "topic": "<The core technical concept, e.g., 'LRU Cache'>",
-  "recommendation": "<The single most relevant resource (e.g., 'LeetCode 146' or a specific article/topic name)>",
-  "reason": "<One concise sentence explaining why this concept applies to the user's code>"
-}
+When choosing resources:
+- Prefer sources that directly match the code and language in front of the user.
+- Prefer practical, high-signal material over generic SEO content.
+- Include a mix when useful, for example docs + tutorial, or blog + repo, or paper + implementation notes.
+- Do not artificially cap the conceptual breadth; return as many relevant resources as needed for a good learning path.
 
-## Code:
+Return JSON with:
+- "topic": the main concept
+- "recommendation": the best first resource to open
+- "reason": why this concept applies here
+- "resources": an array of resources with title, url, sourceType, relevance
+
+## Code
 \`\`\`${language || ''}
 ${code}
 \`\`\`

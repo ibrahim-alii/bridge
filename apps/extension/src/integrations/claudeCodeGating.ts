@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs/promises';
 import { SessionManager } from '../state/sessionState';
 import { applyGateDecorations, clearGateDecorations, unlockSpecificBlock } from './editorDecorations';
 import { logger } from '@bridge/shared-utils';
@@ -12,6 +13,7 @@ import { logger } from '@bridge/shared-utils';
  */
 export class ClaudeCodeGateManager {
   private lockedFiles = new Map<string, boolean>();
+  private originalModes = new Map<string, number>();
   private saveBlocker: vscode.Disposable | null = null;
   private editWarner: vscode.Disposable | null = null;
 
@@ -22,6 +24,11 @@ export class ClaudeCodeGateManager {
    */
   async handleFileSave(document: vscode.TextDocument): Promise<void> {
     const filePath = document.uri.fsPath;
+
+    if (document.isDirty) {
+      logger.debug('Skipping gating for unsaved document', { filePath });
+      return;
+    }
 
     // Check if file is already locked
     if (this.lockedFiles.get(filePath)) {
@@ -69,6 +76,7 @@ export class ClaudeCodeGateManager {
 
       // Lock the file
       this.lockedFiles.set(filePath, true);
+      await this.makeFileReadOnly(filePath);
 
       // Apply decorations to hide gated blocks
       const editor = vscode.window.activeTextEditor;
@@ -126,6 +134,33 @@ export class ClaudeCodeGateManager {
     context.subscriptions.push(this.saveBlocker, this.editWarner);
   }
 
+  async syncFromSession(): Promise<void> {
+    const state = this.sessionManager.getState();
+    const activeFilePath = this.sessionManager.getCurrentGateFilePath();
+    const shouldHardLock = !!state?.isLocked && state.activeGate === 'blank' && !!activeFilePath;
+
+    for (const filePath of [...this.lockedFiles.keys()]) {
+      if (!shouldHardLock || filePath !== activeFilePath) {
+        await this.releaseFileLock(filePath);
+      }
+    }
+
+    if (!shouldHardLock || !activeFilePath) {
+      return;
+    }
+
+    this.lockedFiles.set(activeFilePath, true);
+    await this.makeFileReadOnly(activeFilePath);
+
+    const editor = vscode.window.visibleTextEditors.find(
+      (candidate) => candidate.document.uri.fsPath === activeFilePath,
+    );
+    const gatedBlocks = state?.pendingGates[0]?.metadata?.gatedBlocks;
+    if (editor && Array.isArray(gatedBlocks) && gatedBlocks.length > 0) {
+      applyGateDecorations(editor, gatedBlocks);
+    }
+  }
+
   /**
    * Unlock the current block after user passes evaluation
    */
@@ -159,7 +194,7 @@ export class ClaudeCodeGateManager {
 
     if (!hasMoreBlocks) {
       // All blocks unlocked, unlock the file
-      this.lockedFiles.delete(filePath);
+      await this.releaseFileLock(filePath);
 
       if (editor) {
         clearGateDecorations(editor);
@@ -174,7 +209,7 @@ export class ClaudeCodeGateManager {
    * Manually unlock a file (for cleanup or error recovery)
    */
   unlockFile(filePath: string): void {
-    this.lockedFiles.delete(filePath);
+    void this.releaseFileLock(filePath);
 
     const editor = vscode.window.visibleTextEditors.find(
       (e) => e.document.uri.fsPath === filePath
@@ -191,6 +226,40 @@ export class ClaudeCodeGateManager {
   dispose(): void {
     this.saveBlocker?.dispose();
     this.editWarner?.dispose();
-    this.lockedFiles.clear();
+    for (const filePath of [...this.lockedFiles.keys()]) {
+      void this.releaseFileLock(filePath);
+    }
+  }
+
+  private async makeFileReadOnly(filePath: string): Promise<void> {
+    try {
+      const stats = await fs.stat(filePath);
+      const currentMode = stats.mode & 0o777;
+
+      if (!this.originalModes.has(filePath)) {
+        this.originalModes.set(filePath, currentMode);
+      }
+
+      const readOnlyMode = currentMode & ~0o222;
+      if (readOnlyMode !== currentMode) {
+        await fs.chmod(filePath, readOnlyMode);
+      }
+    } catch (error) {
+      logger.warn('Failed to apply OS-level lock for Claude Code', { filePath, error });
+    }
+  }
+
+  private async releaseFileLock(filePath: string): Promise<void> {
+    try {
+      const originalMode = this.originalModes.get(filePath);
+      if (originalMode !== undefined) {
+        await fs.chmod(filePath, originalMode);
+        this.originalModes.delete(filePath);
+      }
+    } catch (error) {
+      logger.warn('Failed to release OS-level lock for Claude Code', { filePath, error });
+    } finally {
+      this.lockedFiles.delete(filePath);
+    }
   }
 }

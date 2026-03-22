@@ -32,6 +32,18 @@
       {
         "command": "bridge.showStatus",
         "title": "Bridge: Show Session Status"
+      },
+      {
+        "command": "bridge.commitAndVerify",
+        "title": "Bridge: Commit And Verify"
+      },
+      {
+        "command": "bridge.getStudyResource",
+        "title": "Bridge: Get Study Resource"
+      },
+      {
+        "command": "bridge.focusSidebar",
+        "title": "Bridge: Focus Sidebar"
       }
     ],
     "viewsContainers": {
@@ -51,6 +63,16 @@
           "name": "Bridge Panel"
         }
       ]
+    },
+    "configuration": {
+      "title": "Bridge",
+      "properties": {
+        "bridge.apiBaseUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:3727/api",
+          "description": "Base URL for the local Bridge API backend."
+        }
+      }
     }
   },
   "scripts": {

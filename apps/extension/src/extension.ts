@@ -9,6 +9,8 @@ import { GitManager } from './integrations/git';
 import { EventRouter } from './integrations/router';
 import { ClaudeCodeGateManager } from './integrations/claudeCodeGating';
 import { registerPatternGating } from './integrations/editorDecorations';
+import { registerGitIntegration } from './integrations/gitIntegration';
+import { registerAlgoBridge } from './integrations/algoBridge';
 
 export function activate(context: vscode.ExtensionContext) {
   logger.info('Bridge extension activating...');
@@ -26,6 +28,14 @@ export function activate(context: vscode.ExtensionContext) {
   statusBar.sync(sessionManager.getState());
 
   registerCommands(context, sessionManager, sidebarProvider, statusBar);
+  registerGitIntegration(context, sessionManager);
+  registerAlgoBridge(context, sessionManager);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('bridge.focusSidebar', async () => {
+      await vscode.commands.executeCommand('workbench.view.extension.bridge-sidebar');
+    }),
+  );
 
   const workspaceManager = new WorkspaceManager();
   const gitManager = new GitManager();
@@ -52,6 +62,12 @@ export function activate(context: vscode.ExtensionContext) {
     sessionManager.onDidUnlockGate(() => {
       gateManager.unlockCurrentBlock();
     })
+  );
+
+  context.subscriptions.push(
+    sessionManager.onDidChangeSession(() => {
+      void gateManager.syncFromSession();
+    }),
   );
   
   // Auto-start session if none exists
