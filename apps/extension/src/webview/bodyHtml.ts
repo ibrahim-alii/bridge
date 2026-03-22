@@ -81,8 +81,12 @@ export function renderSidebarBody(state: SessionState | null, activeTab: string 
   const learnContent = !locked
     ? `
       <div class="card card-dark">
-        <div class="gate-title">No active gates</div>
-        <p>Run <strong>Bridge: Analyze Current File</strong> when the backend is connected.</p>
+        <div class="gate-title">${state.approvals.length > 0 ? 'Well done' : 'No active gates'}</div>
+        <p>${
+          state.approvals.length > 0
+            ? `Congrats, you cleared all current Bridge gates. You can keep coding, or run <strong>Bridge: Analyze Current File</strong> to generate a new challenge.`
+            : 'Run <strong>Bridge: Analyze Current File</strong> when the backend is connected.'
+        }</p>
       </div>
     `
     : renderGateSection(state);

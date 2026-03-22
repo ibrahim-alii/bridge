@@ -29,6 +29,7 @@ export const CLIENT_SCRIPT = `
     var mentorOut = document.getElementById('mentor-out');
     if (mentorOut) {
       mentorOut.hidden = false;
+      mentorOut.classList.remove('hidden');
       mentorOut.textContent = 'Bridge error: ' + String(message || 'Action failed.');
     }
 
@@ -126,25 +127,135 @@ export const CLIENT_SCRIPT = `
     }
   }
 
-  function showMentorResponse(msg) {
+  function renderMentorStepper(container, msg) {
+    if (!container) return;
+
     var hints = Array.isArray(msg.hints) ? msg.hints : [];
     var questions = Array.isArray(msg.guidingQuestions) ? msg.guidingQuestions : [];
-    var parts = [];
-    hints.forEach(function (hint) {
-      parts.push('L' + String(hint.level || '?') + ': ' + String(hint.hint || ''));
-    });
-    questions.forEach(function (question) {
-      parts.push('Q: ' + String(question || ''));
-    });
-    if (msg.encouragement) {
-      parts.push(String(msg.encouragement));
+    var encouragement = msg.encouragement ? String(msg.encouragement) : '';
+
+    if (hints.length === 0 && questions.length === 0 && !encouragement) {
+      container.textContent = 'No mentor guidance returned.';
+      return;
     }
-    var body = parts.join('\\n\\n') || 'No mentor guidance returned.';
-    clearPendingMentorMessage(body);
+
+    var pages = [];
+    hints.forEach(function (hint, index) {
+      pages.push({
+        label: 'Hint ' + String(index + 1),
+        title: 'L' + String(hint.level || index + 1),
+        body: String(hint.hint || ''),
+        meta: hint.focusArea ? 'Focus: ' + String(hint.focusArea) : '',
+      });
+    });
+    questions.forEach(function (question, index) {
+      pages.push({
+        label: 'Question ' + String(index + 1),
+        title: 'Q' + String(index + 1),
+        body: String(question || ''),
+        meta: 'Reflect before revealing the next step.',
+      });
+    });
+    if (encouragement) {
+      pages.push({
+        label: 'Wrap-up',
+        title: 'Keep Going',
+        body: encouragement,
+        meta: '',
+      });
+    }
+
+    var currentIndex = 0;
+    container.textContent = '';
+    container.classList.add('mentor-stepper');
+
+    var header = document.createElement('div');
+    header.className = 'mentor-stepper-header';
+
+    var badge = document.createElement('div');
+    badge.className = 'mentor-stepper-badge';
+
+    var count = document.createElement('div');
+    count.className = 'mentor-stepper-count';
+
+    header.appendChild(badge);
+    header.appendChild(count);
+
+    var card = document.createElement('div');
+    card.className = 'mentor-stepper-card';
+
+    var title = document.createElement('div');
+    title.className = 'mentor-stepper-title';
+
+    var body = document.createElement('div');
+    body.className = 'mentor-stepper-body';
+
+    var meta = document.createElement('div');
+    meta.className = 'mentor-stepper-meta';
+
+    card.appendChild(title);
+    card.appendChild(body);
+    card.appendChild(meta);
+
+    var controls = document.createElement('div');
+    controls.className = 'mentor-stepper-controls';
+
+    var prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'mentor-stepper-btn mentor-stepper-btn-secondary';
+    prev.textContent = 'Previous';
+
+    var next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'mentor-stepper-btn';
+    next.textContent = 'Next';
+
+    controls.appendChild(prev);
+    controls.appendChild(next);
+
+    function renderPage(index) {
+      var page = pages[index];
+      badge.textContent = page.label;
+      count.textContent = String(index + 1) + ' / ' + String(pages.length);
+      title.textContent = page.title;
+      body.textContent = page.body;
+      meta.textContent = page.meta || '';
+      meta.style.display = page.meta ? 'block' : 'none';
+      prev.disabled = index === 0;
+      next.disabled = index === pages.length - 1;
+      next.textContent = index === pages.length - 1 ? 'Done' : 'Next';
+    }
+
+    prev.addEventListener('click', function () {
+      if (currentIndex === 0) return;
+      currentIndex -= 1;
+      renderPage(currentIndex);
+    });
+
+    next.addEventListener('click', function () {
+      if (currentIndex >= pages.length - 1) return;
+      currentIndex += 1;
+      renderPage(currentIndex);
+    });
+
+    container.appendChild(header);
+    container.appendChild(card);
+    if (pages.length > 1) {
+      container.appendChild(controls);
+    }
+
+    renderPage(currentIndex);
+  }
+
+  function showMentorResponse(msg) {
+    clearPendingMentorMessage('Mentor guidance is ready below.');
     var mentorOut = document.getElementById('mentor-out');
     if (mentorOut) {
       mentorOut.hidden = true;
-      mentorOut.textContent = body;
+      mentorOut.textContent = '';
+      renderMentorStepper(mentorOut, msg);
+      mentorOut.classList.remove('hidden');
+      mentorOut.hidden = false;
     }
   }
 
@@ -152,6 +263,7 @@ export const CLIENT_SCRIPT = `
     var study = document.getElementById('study-out');
     if (!study) return;
     study.hidden = false;
+    study.classList.remove('hidden');
     study.textContent = 'Searching live sources...';
     study.classList.add('mentor-box-loading');
   }
@@ -160,6 +272,7 @@ export const CLIENT_SCRIPT = `
     var study = document.getElementById('study-out');
     if (!study) return;
     study.hidden = false;
+    study.classList.remove('hidden');
     study.classList.remove('mentor-box-loading');
     var resources = Array.isArray(msg.resources) ? msg.resources : [];
     var lines = [

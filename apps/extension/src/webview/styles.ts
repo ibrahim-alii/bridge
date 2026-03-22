@@ -268,6 +268,86 @@ export const SIDEBAR_STYLES = `
   .mentor-box-loading {
     opacity: 0.8;
   }
+
+  .mentor-stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mentor-stepper-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .mentor-stepper-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(52, 211, 153, 0.14);
+    color: var(--br-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .mentor-stepper-count {
+    color: var(--br-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .mentor-stepper-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .mentor-stepper-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--br-text);
+    margin-bottom: 8px;
+  }
+
+  .mentor-stepper-body {
+    font-size: 13px;
+    color: var(--br-text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .mentor-stepper-meta {
+    margin-top: 10px;
+    color: var(--br-text-muted);
+    font-size: 11px;
+  }
+
+  .mentor-stepper-controls {
+    display: flex;
+    gap: 10px;
+  }
+
+  .mentor-stepper-btn {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mentor-stepper-btn-secondary {
+    background: transparent;
+    color: var(--br-text);
+    border: 1px solid var(--br-border);
+  }
+
+  .mentor-stepper-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
   
   .hidden { display: none !important; }
 `;

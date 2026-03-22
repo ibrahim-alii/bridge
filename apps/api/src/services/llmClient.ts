@@ -68,7 +68,10 @@ ${limitedUserCode}
 \`\`\`
 
 Reply in JSON format: {"correct": boolean, "feedback": "...", "hint": "..."}
-Focus on functional correctness, not style. Be encouraging if correct, provide a Socratic hint if incorrect.`,
+Focus on functional correctness, not style.
+Be slightly lenient: accept answers that capture the core behavior even if names, structure, or wording differ.
+Keep feedback short: 1-2 sentences, max 35 words.
+If incorrect, mention the biggest mismatch briefly and give a short hint without sounding harsh.`,
           },
         ],
       });
@@ -117,7 +120,9 @@ USER'S EXPLANATION:
 ${limitedExplanation}
 
 Reply in JSON format: {"correct": boolean, "feedback": "...", "hint": "..."}
-Award credit if the explanation shows understanding even if the line number is slightly off.`,
+Be slightly lenient: award credit if the explanation shows the core issue, even if the line number or wording is somewhat off.
+Keep feedback short: 1-2 sentences, max 35 words.
+If incorrect, briefly point to what they missed and provide a short hint.`,
           },
         ],
       });
@@ -164,7 +169,9 @@ USER'S EXPLANATION:
 ${limitedExplanation}
 
 Reply in JSON format: {"correct": boolean, "feedback": "...", "hint": "..."}
-Award credit if they demonstrate understanding of what changed and why, even if not perfectly worded.`,
+Be slightly lenient: award credit if they explain the main change and purpose, even if details are incomplete or phrasing is imperfect.
+Keep feedback short: 1-2 sentences, max 35 words.
+If incorrect, name the main gap briefly and provide a short hint.`,
           },
         ],
       });

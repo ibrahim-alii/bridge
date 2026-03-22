@@ -28,6 +28,48 @@ const LLMSabotageSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']),
 });
 
+function normalize(text: string): string {
+  return text.replace(/\r\n/g, '\n').trim();
+}
+
+function getLine(text: string, lineNumber: number): string {
+  return text.split(/\r?\n/)[Math.max(0, lineNumber - 1)] ?? '';
+}
+
+function buildFallbackFixEvaluation(request: SabotageFixRequest): SabotageFixResponse {
+  const normalizedFixed = normalize(request.fixedCode);
+  const normalizedOriginal = normalize(request.originalCode);
+
+  if (normalizedFixed === normalizedOriginal) {
+    return {
+      passed: true,
+      feedback: 'Nice fix. You restored the code to the original intended behavior.',
+      correctLineIdentified: true,
+    };
+  }
+
+  const fixedLine = getLine(request.fixedCode, request.originalLine).trim();
+  const restoredOriginalLine = fixedLine === request.originalContent.trim();
+  const stillHasSabotagedLine = fixedLine === request.sabotagedContent.trim();
+
+  if (restoredOriginalLine) {
+    return {
+      passed: true,
+      feedback: 'Nice fix. You corrected the bugged line and brought the behavior back in line.',
+      correctLineIdentified: true,
+    };
+  }
+
+  return {
+    passed: false,
+    feedback: stillHasSabotagedLine
+      ? 'The bugged line still appears unchanged.'
+      : 'Your edit changed the code, but the original bug does not look fully resolved yet.',
+    hint: `Focus on the line that was intentionally changed and think about the ${request.bugType.replace(/_/g, ' ')} behavior it introduced.`,
+    correctLineIdentified: !stillHasSabotagedLine,
+  };
+}
+
 export const sabotageService = {
   /**
    * Inject a single controlled bug into the given code.
@@ -110,10 +152,16 @@ Return a JSON object:
       correctLineIdentified: z.boolean().optional(),
     });
 
-    const result = await llm.complete(prompt, responseSchema, {
-      temperature: 0.2,
-    });
-
-    return result;
+    try {
+      return await llm.complete(prompt, responseSchema, {
+        temperature: 0.2,
+      });
+    } catch (error) {
+      logger.warn('sabotageService: LLM fix evaluation failed, returning deterministic fallback', {
+        error,
+        bugId: request.bugId,
+      });
+      return buildFallbackFixEvaluation(request);
+    }
   },
 };

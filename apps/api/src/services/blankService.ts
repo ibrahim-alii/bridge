@@ -113,13 +113,14 @@ ${request.expectedPattern}
 2. Check for conceptual correctness: does the explanation match what the code actually does?
 3. Check for required concepts: does the explanation mention the key operations/patterns?
 4. Check for contradictions: does the explanation say anything obviously wrong?
-5. Be generous — if the user shows genuine understanding, pass them
-6. If they're close but missing something, give a helpful hint without revealing the answer
+5. Be slightly lenient — if the user shows the core idea, pass them even if some details are fuzzy
+6. Keep feedback brief: 1-2 sentences, max 35 words
+7. If they're close but missing something, give a helpful short hint without revealing the answer
 
 Return a JSON object:
 {
   "passed": <boolean>,
-  "feedback": "<specific feedback on their explanation>",
+  "feedback": "<brief feedback on their explanation>",
   "hint": "<if failed, a Socratic hint that guides without giving the answer — omit if passed>",
   "confidence": <0-1 how confident you are in this evaluation>
 }`;
