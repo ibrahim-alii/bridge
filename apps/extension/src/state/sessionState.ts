@@ -167,11 +167,7 @@ export class SessionManager implements vscode.Disposable {
     return this.forwardEvaluate(payload);
   }
 
-  async submitQuizAnswer(
-    questionId: string,
-    selectedIndex: number,
-    correctIndex: number,
-  ): Promise<EvaluateResponse> {
+  async submitQuizAnswer(questionId: string, selectedIndex: number): Promise<EvaluateResponse> {
     if (!this.state) {
       throw new Error('No active session');
     }
@@ -179,7 +175,7 @@ export class SessionManager implements vscode.Disposable {
     const payload: EvaluateRequest = {
       sessionId: this.state.sessionId,
       scope: 'quiz',
-      quizAnswer: { questionId, selectedIndex, correctIndex },
+      quizAnswer: { questionId, selectedIndex },
     };
 
     return this.forwardEvaluate(payload);
