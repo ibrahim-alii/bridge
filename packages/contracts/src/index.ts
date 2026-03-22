@@ -46,6 +46,48 @@ export type {
   SabotageFixResponse,
 } from './sabotage';
 
+// ─── Mentor ─────────────────────────────────────────────────────────
+export {
+  MentorHintRequestSchema,
+  MentorHintSchema,
+  MentorHintResponseSchema,
+} from './mentor';
+export type {
+  MentorHintRequest,
+  MentorHint,
+  MentorHintResponse,
+} from './mentor';
+
+// ─── Study ──────────────────────────────────────────────────────────
+export {
+  StudyRecommendationRequestSchema,
+  StudyRecommendationResponseSchema,
+} from './study';
+export type {
+  StudyRecommendationRequest,
+  StudyRecommendationResponse,
+} from './study';
+
+// ─── Bounty ─────────────────────────────────────────────────────────
+export {
+  SmellTypeSchema,
+  BountyAnalyzeRequestSchema,
+  BountyAnalyzeResponseSchema,
+  BountyChallengeRequestSchema,
+  BountyChallengeResponseSchema,
+  BountyEvaluateRequestSchema,
+  BountyEvaluateResponseSchema,
+} from './bounty';
+export type {
+  SmellType,
+  BountyAnalyzeRequest,
+  BountyAnalyzeResponse,
+  BountyChallengeRequest,
+  BountyChallengeResponse,
+  BountyEvaluateRequest,
+  BountyEvaluateResponse,
+} from './bounty';
+
 // ─── Session ────────────────────────────────────────────────────────
 export {
   GateScopeSchema,

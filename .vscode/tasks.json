@@ -4,7 +4,10 @@
     {
       "label": "build-extension",
       "type": "process",
-      "command": "pnpm.cmd",
+      "command": "pnpm",
+      "windows": {
+        "command": "pnpm.cmd"
+      },
       "args": [
         "turbo",
         "run",

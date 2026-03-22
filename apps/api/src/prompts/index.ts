@@ -10,3 +10,5 @@ export { buildQuizPrompt } from './quiz';
 export { buildBlankingPrompt } from './blanking';
 export { buildSabotagePrompt } from './sabotage';
 export { buildMentorHintPrompt } from './mentor';
+export { buildStudyPrompt } from './study';
+export { buildBountyChallengePrompt, buildBountyEvaluatePrompt } from './bounty';
