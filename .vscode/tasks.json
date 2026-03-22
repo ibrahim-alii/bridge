@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-extension",
+      "type": "process",
+      "command": "pnpm.cmd",
+      "args": [
+        "turbo",
+        "run",
+        "build",
+        "--filter=bridge"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
+    }
+  ]
+}

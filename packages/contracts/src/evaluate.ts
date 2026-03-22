@@ -49,6 +49,8 @@ export const EvaluateResponseSchema = z.object({
   hint: z.string().optional(),
   /** Number of attempts remaining before escalation */
   attemptsRemaining: z.number().optional(),
+  /** Whether to show the correct answer (max attempts reached) */
+  showAnswer: z.boolean().optional(),
 });
 
 export type EvaluateResponse = z.infer<typeof EvaluateResponseSchema>;

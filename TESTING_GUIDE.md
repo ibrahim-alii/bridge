@@ -1,20 +1,23 @@
 # Bridge API Testing Guide
 
+<<<<<<< HEAD
 This guide contains all the `curl` commands needed to fully test the backend LLM features on a complex real-world implementation: **a fetch wrapper with an LRU-style stale-while-revalidate cache and rate limit handling**.
+=======
+This guide contains terminal commands to test the backend API end-to-end.
+>>>>>>> main
 
-> **Tip:** We use `python3 -m json.tool` to format the JSON output so it's readable in the terminal.
+> Tip: We use `python3 -m json.tool` to pretty-print JSON.
+> PowerShell users: prefer `node apps/api/scripts/run-guide-tests.mjs` or use `curl.exe` instead of `curl`.
 
 ---
 
 ## 1. Start the Server
 
-Before testing, make sure your contracts are built and the API server is running.
-
 ```bash
-# In one terminal, build contracts to ensure types are up to date:
+# Build contracts first
 npx pnpm --filter @bridge/contracts build
 
-# Then start the API dev server:
+# Start API in another terminal
 npx pnpm --filter @bridge/api dev
 ```
 
@@ -22,43 +25,55 @@ npx pnpm --filter @bridge/api dev
 
 ## 2. Health & Session
 
-**Check if the server is running:**
 ```bash
-curl -s http://localhost:3727/api/health | python3 -m json.tool
-```
+curl -sS http://localhost:3727/api/health | python3 -m json.tool
 
-**Create a new session:**
-```bash
-curl -s -X POST http://localhost:3727/api/session \
+SESSION_JSON=$(curl -sS -X POST http://localhost:3727/api/session \
   -H "Content-Type: application/json" \
-  -d '{}' | python3 -m json.tool
+  -d '{}')
+echo "$SESSION_JSON" | python3 -m json.tool
+
+SESSION_ID=$(echo "$SESSION_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['sessionId'])")
+echo "SESSION_ID=$SESSION_ID"
 ```
 
 ---
 
 ## 3. Analyze Code (Triage)
 
+<<<<<<< HEAD
 This endpoint decides *which* blocks should be gated and what *type* of gate to use (quiz, blank, sabotage) on our complex caching function.
 
+=======
+>>>>>>> main
 ```bash
-curl -s -X POST http://localhost:3727/api/analyze \
+ANALYZE_JSON=$(curl -sS -X POST http://localhost:3727/api/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
     "language": "javascript",
+<<<<<<< HEAD
     "sessionId": "462cc224-ce15-403c-b28d-9f291334cf40"
   }' | python3 -m json.tool
+=======
+    "sessionId": "'"$SESSION_ID"'"
+  }')
+
+echo "$ANALYZE_JSON" | python3 -m json.tool
+ANALYSIS_ID=$(echo "$ANALYZE_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['analysisId'])")
+echo "ANALYSIS_ID=$ANALYSIS_ID"
+>>>>>>> main
 ```
 
 ---
 
 ## 4. Quizzes (Architectural Comprehension)
 
-**Generate a quiz:**
 ```bash
-curl -s -X POST http://localhost:3727/api/quiz \
+QUIZ_JSON=$(curl -sS -X POST http://localhost:3727/api/quiz \
   -H "Content-Type: application/json" \
   -d '{
+<<<<<<< HEAD
     "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
     "analysisId": "c582a455-577a-4959-a240-e12e30b8f41f",
     "sessionId": "462cc224-ce15-403c-b28d-9f291334cf40"
@@ -69,14 +84,31 @@ curl -s -X POST http://localhost:3727/api/quiz \
 
 ```bash
 curl -s -X POST http://localhost:3727/api/evaluate \
+=======
+    "code": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
+    "analysisId": "'"$ANALYSIS_ID"'",
+    "sessionId": "'"$SESSION_ID"'"
+  }')
+
+echo "$QUIZ_JSON" | python3 -m json.tool
+QUESTION_ID=$(echo "$QUIZ_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['questions'][0]['questionId'])")
+echo "QUESTION_ID=$QUESTION_ID"
+
+curl -sS -X POST http://localhost:3727/api/evaluate \
+>>>>>>> main
   -H "Content-Type: application/json" \
   -d '{
-    "sessionId": "00000000-0000-0000-0000-000000000001",
+    "sessionId": "'"$SESSION_ID"'",
     "scope": "quiz",
     "quizAnswer": {
+<<<<<<< HEAD
       "questionId": "YOUR_QUESTION_ID",
       "selectedIndex": 2,
       "correctIndex": 2
+=======
+      "questionId": "'"$QUESTION_ID"'",
+      "selectedIndex": 2
+>>>>>>> main
     }
   }' | python3 -m json.tool
 ```
@@ -85,20 +117,28 @@ curl -s -X POST http://localhost:3727/api/evaluate \
 
 ## 5. Blank Gating (Pattern Implementation)
 
+<<<<<<< HEAD
 **Generate blanks:**
+=======
+>>>>>>> main
 ```bash
-curl -s -X POST http://localhost:3727/api/blank \
+BLANK_JSON=$(curl -sS -X POST http://localhost:3727/api/blank \
   -H "Content-Type: application/json" \
   -d '{
     "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
     "language": "javascript"
-  }' | python3 -m json.tool
-```
+  }')
 
+<<<<<<< HEAD
 *(You can test `/api/blank/evaluate` by plugging in the exact start and end lines of one of the blanks returned above)*
 
 ```bash
 curl -s -X POST http://localhost:3727/api/blank/evaluate \
+=======
+echo "$BLANK_JSON" | python3 -m json.tool
+
+curl -sS -X POST http://localhost:3727/api/blank/evaluate \
+>>>>>>> main
   -H "Content-Type: application/json" \
   -d '{
     "blankId": "test-1",
@@ -114,23 +154,50 @@ curl -s -X POST http://localhost:3727/api/blank/evaluate \
 
 ## 6. Sabotage (Spot the Bug)
 
+<<<<<<< HEAD
 **Inject a bug into the cache logic:**
+=======
+>>>>>>> main
 ```bash
-curl -s -X POST http://localhost:3727/api/sabotage \
+SABOTAGE_JSON=$(curl -sS -X POST http://localhost:3727/api/sabotage \
   -H "Content-Type: application/json" \
   -d '{
     "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
     "language": "javascript"
-  }' | python3 -m json.tool
-```
+  }')
 
-> *Note: The command above returns a JSON payload containing the `bugId`, `sabotagedCode`, `originalLine`, `originalContent`, `sabotagedContent`, and `bugType`. You must plug those values into the evaluation command below.*
+echo "$SABOTAGE_JSON" | python3 -m json.tool
 
+<<<<<<< HEAD
 **Evaluate your fix:**
+=======
+BUG_ID=$(echo "$SABOTAGE_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['bugId'])")
+BUG_TYPE=$(echo "$SABOTAGE_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['bugType'])")
+ORIGINAL_LINE=$(echo "$SABOTAGE_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['originalLine'])")
+>>>>>>> main
 
-```bash
-curl -s -X POST http://localhost:3727/api/sabotage/fix \
+echo "BUG_ID=$BUG_ID BUG_TYPE=$BUG_TYPE ORIGINAL_LINE=$ORIGINAL_LINE"
+
+SABOTAGE_FIX_JSON=$(python3 - <<'PY' "$SABOTAGE_JSON"
+import sys, json
+s = json.loads(sys.argv[1])
+payload = {
+  "bugId": s["bugId"],
+  "originalCode": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
+  "sabotagedCode": s["sabotagedCode"],
+  "originalLine": s["originalLine"],
+  "originalContent": s["originalContent"],
+  "sabotagedContent": s["sabotagedContent"],
+  "bugType": s["bugType"],
+  "fixedCode": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
+}
+print(json.dumps(payload))
+PY
+)
+
+curl -sS -X POST http://localhost:3727/api/sabotage/fix \
   -H "Content-Type: application/json" \
+<<<<<<< HEAD
   -d '{
     "bugId": "THE_BUG_ID_FROM_ABOVE",
     "originalCode": "THE_LONG_CODE_STRING",
@@ -141,4 +208,7 @@ curl -s -X POST http://localhost:3727/api/sabotage/fix \
     "bugType": "THE_BUG_TYPE_FROM_ABOVE",
     "fixedCode": "THE_LONG_CODE_STRING"
   }' | python3 -m json.tool
+=======
+  -d "$SABOTAGE_FIX_JSON" | python3 -m json.tool
+>>>>>>> main
 ```

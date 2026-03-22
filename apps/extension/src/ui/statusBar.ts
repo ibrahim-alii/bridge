@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import type { SessionState } from '@bridge/contracts';
 
 /**
- * Bridge status bar item — shows lock/unlock state in the VS Code footer.
+ * Status bar — reflects session lock state from {@link SessionState} snapshots.
  */
 export class BridgeStatusBar implements vscode.Disposable {
   private item: vscode.StatusBarItem;
@@ -9,17 +10,26 @@ export class BridgeStatusBar implements vscode.Disposable {
   constructor() {
     this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     this.item.command = 'bridge.showStatus';
-    this.setUnlocked();
+    this.sync(null);
     this.item.show();
   }
 
-  setLocked(gateType: string): void {
-    this.item.text = `$(lock) Bridge: ${gateType}`;
-    this.item.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-    this.item.tooltip = `Bridge is locked — complete the ${gateType} gate to continue`;
-  }
+  sync(state: SessionState | null): void {
+    if (!state) {
+      this.item.text = '$(beaker) Bridge';
+      this.item.tooltip = 'Bridge — start a session from the panel or command palette';
+      this.item.backgroundColor = undefined;
+      return;
+    }
 
-  setUnlocked(): void {
+    if (state.isLocked && state.activeGate) {
+      const label = gateLabel(state.activeGate);
+      this.item.text = `$(lock) Bridge: ${label}`;
+      this.item.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+      this.item.tooltip = `Bridge is locked — complete the ${label} gate`;
+      return;
+    }
+
     this.item.text = '$(unlock) Bridge: Ready';
     this.item.backgroundColor = undefined;
     this.item.tooltip = 'Bridge — no active gates';
@@ -27,5 +37,20 @@ export class BridgeStatusBar implements vscode.Disposable {
 
   dispose(): void {
     this.item.dispose();
+  }
+}
+
+function gateLabel(gate: NonNullable<SessionState['activeGate']>): string {
+  switch (gate) {
+    case 'blank':
+      return 'Blank';
+    case 'quiz':
+      return 'Quiz';
+    case 'bug':
+      return 'Bug';
+    case 'commit':
+      return 'Commit';
+    default:
+      return gate;
   }
 }
