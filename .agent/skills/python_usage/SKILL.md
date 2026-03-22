@@ -1,0 +1,1 @@
+use "conda activate silicon" to run any python scripts
