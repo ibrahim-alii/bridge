@@ -197,7 +197,6 @@ PY
 
 curl -sS -X POST http://localhost:3727/api/sabotage/fix \
   -H "Content-Type: application/json" \
-<<<<<<< HEAD
   -d '{
     "bugId": "THE_BUG_ID_FROM_ABOVE",
     "originalCode": "THE_LONG_CODE_STRING",
@@ -208,7 +207,46 @@ curl -sS -X POST http://localhost:3727/api/sabotage/fix \
     "bugType": "THE_BUG_TYPE_FROM_ABOVE",
     "fixedCode": "THE_LONG_CODE_STRING"
   }' | python3 -m json.tool
-=======
   -d "$SABOTAGE_FIX_JSON" | python3 -m json.tool
->>>>>>> main
 ```
+
+---
+
+## 7. Mentor (Conceptual Hints)
+
+The mentor endpoint returns **conceptual guidance only — never code**. It provides escalating hints, Socratic guiding questions, and encouragement.
+
+**Get hints for a code snippet:**
+```bash
+MENTOR_JSON=$(curl -sS -X POST http://localhost:3727/api/mentor/hint \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
+    "question": "I dont understand how the caching logic works or when stale data gets served",
+    "attemptNumber": 1
+  }')
+
+echo "$MENTOR_JSON" | python3 -m json.tool
+```
+
+**Expected response shape:**
+- `hints` — 3 items with levels 1 (nudge), 2 (guide), 3 (near-explain). **None should contain code.**
+- `guidingQuestions` — Socratic questions like *"What happens when the cache entry exists but is expired?"*
+- `encouragement` — a brief motivational message
+
+**Follow-up with escalation (pass previous hints):**
+```bash
+# Extract the first hint text for escalation
+PREV_HINT=$(echo "$MENTOR_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['hints'][0]['hint'])")
+
+curl -sS -X POST http://localhost:3727/api/mentor/hint \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
+    "question": "I still dont get why stale data is returned instead of an error",
+    "previousHints": ["'"$PREV_HINT"'"],
+    "attemptNumber": 2
+  }' | python3 -m json.tool
+```
+
+> **Verify:** Hints in the second request should be slightly more direct (since `attemptNumber` is 2 and `previousHints` is populated) but still **never contain code**.

@@ -46,6 +46,18 @@ export type {
   SabotageFixResponse,
 } from './sabotage';
 
+// ─── Mentor ─────────────────────────────────────────────────────────
+export {
+  MentorHintRequestSchema,
+  MentorHintSchema,
+  MentorHintResponseSchema,
+} from './mentor';
+export type {
+  MentorHintRequest,
+  MentorHint,
+  MentorHintResponse,
+} from './mentor';
+
 // ─── Session ────────────────────────────────────────────────────────
 export {
   GateScopeSchema,
