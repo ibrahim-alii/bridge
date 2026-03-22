@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M3 7v4a1 1 0 0 0 1 1h3"/>
-  <path d="M7 7v4a1 1 0 0 0 1 1h3"/>
-  <path d="M21 7v4a1 1 0 0 1-1 1h-3"/>
-  <path d="M17 7v4a1 1 0 0 1-1 1h-3"/>
-  <line x1="12" y1="3" x2="12" y2="21"/>
-  <line x1="3" y1="12" x2="21" y2="12"/>
+  <path d="M2 14h20"/>
+  <path d="M6 5v14"/>
+  <path d="M18 5v14"/>
+  <path d="M2 11l4-6 Q12 16 18 5l4 6"/>
+  <path d="M9 14v-4"/>
+  <path d="M12 14v-3"/>
+  <path d="M15 14v-4"/>
 </svg>
