@@ -33,6 +33,7 @@ evaluateRouter.post('/', validate(EvaluateRequestSchema), async (req: Request, r
       if (policyDecision.approval) {
         await sessionService.addApproval(request.sessionId, policyDecision.approval);
       }
+      await sessionService.removePendingGate(request.sessionId, request.scope);
     } else if (policyDecision.incrementAttempts) {
       // Failure: increment attempts
       await sessionService.incrementAttempts(request.sessionId);

@@ -96,12 +96,12 @@ export const evaluatorService = {
     const metadata = await sessionService.getGateMetadata(session.sessionId, 'blank');
 
     if (!metadata || !metadata.blankReference) {
-      logger.warn('Blank reference not found, using permissive fallback', {
+      logger.warn('Blank reference not found, failing closed', {
         sessionId: session.sessionId,
       });
       return {
-        correct: true,
-        feedback: '⚠️ Reference code not available. Answer accepted.',
+        correct: false,
+        feedback: 'Blank reference not available. Regenerate the blank gate and try again.',
       };
     }
 
@@ -126,12 +126,12 @@ export const evaluatorService = {
     const metadata = await sessionService.getGateMetadata(session.sessionId, 'bug');
 
     if (!metadata || !metadata.bugLocation) {
-      logger.warn('Bug location not found, using permissive fallback', {
+      logger.warn('Bug location not found, failing closed', {
         sessionId: session.sessionId,
       });
       return {
-        correct: true,
-        feedback: '⚠️ Bug location reference not available. Answer accepted.',
+        correct: false,
+        feedback: 'Bug metadata not available. Regenerate the bug challenge and try again.',
       };
     }
 
@@ -179,12 +179,12 @@ export const evaluatorService = {
     const metadata = await sessionService.getGateMetadata(session.sessionId, 'commit');
 
     if (!metadata || !metadata.diffContext) {
-      logger.warn('Diff context not found, using permissive fallback', {
+      logger.warn('Diff context not found, failing closed', {
         sessionId: session.sessionId,
       });
       return {
-        correct: true,
-        feedback: '⚠️ Diff context not available. Answer accepted.',
+        correct: false,
+        feedback: 'Commit diff context not available. Recreate the commit gate and try again.',
       };
     }
 

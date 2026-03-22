@@ -64,10 +64,18 @@ export class BridgeSidebarProvider implements vscode.WebviewViewProvider {
           break;
         }
         case 'requestMentorHint': {
-          const { hint } = await this.sessionManager.requestMentorHint();
+          const result = await this.sessionManager.requestMentorHint(message.question as string);
           webviewView.webview.postMessage({
             type: 'mentorHint',
-            hint,
+            ...result,
+          });
+          break;
+        }
+        case 'requestStudyRecommendation': {
+          const result = await this.sessionManager.requestStudyRecommendation();
+          webviewView.webview.postMessage({
+            type: 'studyRecommendation',
+            ...result,
           });
           break;
         }

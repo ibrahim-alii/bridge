@@ -32,7 +32,7 @@ pnpm install
 # Build all packages
 pnpm build
 
-# Start the API server (mock mode)
+# Start the API server
 pnpm --filter @bridge/api dev
 
 # Develop the extension
@@ -49,8 +49,8 @@ bridge/
 ├── packages/
 │   ├── contracts/          # Shared Zod schemas & TypeScript types
 │   ├── shared-utils/       # Logger, ID generation, time helpers
-│   ├── ui-kit/             # Webview UI components (placeholder)
-│   └── tree-sitter/        # AST parsing integration (placeholder)
+│   ├── ui-kit/             # Webview UI components
+│   └── tree-sitter/        # AST parsing integration
 ├── infra/
 │   ├── docker/             # Dockerfile for API
 │   └── scripts/            # Dev startup scripts

@@ -1,15 +1,18 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import { promisify } from 'util';
-// If logger isn't fully set up by Person 1 yet, we can fall back to console.log
-// import { logger } from '@bridge/shared-utils'; 
+import { SessionManager } from '../state/sessionState';
+import { bridgeFetch } from '../config/api';
 
 const exec = promisify(cp.exec);
 
 /**
  * Register a pre-commit hook that checks for Bridge approval.
  */
-export function registerGitIntegration(context: vscode.ExtensionContext): void {
+export function registerGitIntegration(
+  context: vscode.ExtensionContext,
+  sessionManager: SessionManager,
+): void {
   let disposable = vscode.commands.registerCommand('bridge.commitAndVerify', async () => {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
@@ -40,14 +43,18 @@ export function registerGitIntegration(context: vscode.ExtensionContext): void {
         return; // User bailed
       }
 
-      // 3. Send to Mock Backend (Person 2's Contract)
+      let session = sessionManager.getState();
+      if (!session) {
+        session = await sessionManager.createSession();
+      }
+
+      // 3. Send to the backend for review
       vscode.window.showInformationMessage("Bridge: Analyzing comprehension...");
 
-      // TODO: Swap this with actual fetch to POST /api/commit/review once Person 2 finishes it
-      const reviewPassed = await mockCommitReview(diff, explanation);
+      const review = await reviewCommit(session.sessionId, diff, explanation);
 
       // 4. Evaluate and Act
-      if (reviewPassed) {
+      if (review.passed) {
         // Ask for the commit message since they proved they understand it
         const commitMsg = await vscode.window.showInputBox({
           prompt: "Comprehension verified! Enter your commit message:",
@@ -60,7 +67,12 @@ export function registerGitIntegration(context: vscode.ExtensionContext): void {
         }
       } else {
         // Deny the commit and show a hint
-        vscode.window.showErrorMessage("Bridge Error: Explanation failed to capture core logic. Review the diff and try again.", { modal: true });
+        vscode.window.showErrorMessage(
+          review.hint
+            ? `Bridge Error: ${review.feedback}\n\nHint: ${review.hint}`
+            : `Bridge Error: ${review.feedback}`,
+          { modal: true },
+        );
       }
 
     } catch (error) {
@@ -84,14 +96,24 @@ export async function getCurrentDiff(cwd: string): Promise<string | null> {
   }
 }
 
-/**
- * Mock evaluation function to keep UI development unblocked.
- */
-async function mockCommitReview(diff: string, explanation: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Hacky mock logic: if their explanation is somewhat detailed (over 15 chars), pass them.
-      resolve(explanation.length > 15);
-    }, 1500); // Fake network delay for dramatic effect
+async function reviewCommit(
+  sessionId: string,
+  diff: string,
+  explanation: string,
+): Promise<{ passed: boolean; feedback: string; hint?: string }> {
+  const response = await bridgeFetch('/commit/review', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId,
+      diff,
+      explanation,
+    }),
   });
+
+  if (!response.ok) {
+    throw new Error(`API returned ${response.status}`);
+  }
+
+  return (await response.json()) as { passed: boolean; feedback: string; hint?: string };
 }

@@ -53,7 +53,15 @@ export const CLIENT_SCRIPT = `
       return;
     }
     if (t.id === 'btn-mentor') {
-      vscode.postMessage({ type: 'requestMentorHint' });
+      const ta = document.getElementById('mentor-input-answer');
+      const question = ta && 'value' in ta ? String(ta.value || '').trim() : '';
+      if (question) {
+        vscode.postMessage({ type: 'requestMentorHint', question: question });
+      }
+      return;
+    }
+    if (t.id === 'btn-study') {
+      vscode.postMessage({ type: 'requestStudyRecommendation' });
       return;
     }
     if (t.id === 'btn-submit') {
@@ -102,7 +110,52 @@ export const CLIENT_SCRIPT = `
       var out = document.getElementById('mentor-out');
       if (out) {
         out.hidden = false;
-        out.textContent = msg.hint || '';
+        out.textContent = '';
+        var hints = Array.isArray(msg.hints) ? msg.hints : [];
+        var questions = Array.isArray(msg.guidingQuestions) ? msg.guidingQuestions : [];
+        var parts = [];
+        hints.forEach(function (hint) {
+          parts.push('L' + String(hint.level || '?') + ': ' + String(hint.hint || ''));
+        });
+        questions.forEach(function (question) {
+          parts.push('Q: ' + String(question));
+        });
+        if (msg.encouragement) {
+          parts.push(String(msg.encouragement));
+        }
+        out.textContent = parts.join('\n\n');
+      }
+    }
+    if (msg.type === 'studyRecommendation') {
+      var study = document.getElementById('study-out');
+      if (study) {
+        study.hidden = false;
+        var resources = Array.isArray(msg.resources) ? msg.resources : [];
+        var lines = [
+          String(msg.topic || ''),
+          '',
+          String(msg.reason || ''),
+          '',
+          'Start here: ' + String(msg.recommendation || ''),
+        ];
+        if (resources.length > 0) {
+          lines.push('');
+          lines.push('Resources:');
+          resources.forEach(function (resource, index) {
+            lines.push(
+              String(index + 1) +
+                '. ' +
+                String(resource.title || '') +
+                ' [' +
+                String(resource.sourceType || 'source') +
+                ']\n' +
+                String(resource.url || '') +
+                '\n' +
+                String(resource.relevance || '')
+            );
+          });
+        }
+        study.textContent = lines.join('\n');
       }
     }
   });

@@ -61,10 +61,12 @@ export type {
 // ─── Study ──────────────────────────────────────────────────────────
 export {
   StudyRecommendationRequestSchema,
+  StudyResourceSchema,
   StudyRecommendationResponseSchema,
 } from './study';
 export type {
   StudyRecommendationRequest,
+  StudyResource,
   StudyRecommendationResponse,
 } from './study';
 

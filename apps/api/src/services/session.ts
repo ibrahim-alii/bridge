@@ -13,11 +13,6 @@ interface PendingGate {
   metadata?: any;
 }
 
-const isMockMode = process.env.BRIDGE_MOCK_MODE === 'true';
-
-// Fallback in-memory storage for mock mode
-const mockSessions = new Map<string, SessionState>();
-
 export const sessionService = {
   /**
    * Creates a new session in Supabase.
@@ -36,12 +31,6 @@ export const sessionService = {
       maxAttempts: 3,
       createdAt: now,
     };
-
-    if (isMockMode) {
-      mockSessions.set(sessionId, state);
-      logger.debug('Created session in mock mode', { sessionId });
-      return state;
-    }
 
     try {
       const { error } = await supabase.from('sessions').insert({
@@ -70,10 +59,6 @@ export const sessionService = {
    * Retrieves a session from Supabase with all related data.
    */
   async getSession(sessionId: string): Promise<SessionState | null> {
-    if (isMockMode) {
-      return mockSessions.get(sessionId) || null;
-    }
-
     try {
       // Fetch session
       const { data: sessionData, error: sessionError } = await supabase
@@ -153,16 +138,6 @@ export const sessionService = {
       maxAttempts: number;
     }>
   ): Promise<SessionState> {
-    if (isMockMode) {
-      const session = mockSessions.get(sessionId);
-      if (!session) {
-        throw new Error('Session not found');
-      }
-      const updated = { ...session, ...updates };
-      mockSessions.set(sessionId, updated);
-      return updated;
-    }
-
     try {
       const { error } = await supabase
         .from('sessions')
@@ -196,15 +171,6 @@ export const sessionService = {
    * Adds a pending gate to the session.
    */
   async addPendingGate(sessionId: string, gate: PendingGate): Promise<void> {
-    if (isMockMode) {
-      const session = mockSessions.get(sessionId);
-      if (!session) {
-        throw new Error('Session not found');
-      }
-      session.pendingGates.push(gate);
-      return;
-    }
-
     try {
       const { error } = await supabase.from('pending_gates').insert({
         session_id: sessionId,
@@ -227,18 +193,30 @@ export const sessionService = {
   },
 
   /**
+   * Removes pending gates for a given scope after the user clears that challenge.
+   */
+  async removePendingGate(sessionId: string, scope: GateScope): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('pending_gates')
+        .delete()
+        .eq('session_id', sessionId)
+        .eq('scope', scope);
+
+      if (error) {
+        logger.error('Failed to remove pending gate', { error });
+        throw new Error(`Supabase error: ${error.message}`);
+      }
+    } catch (err) {
+      logger.error('Failed to remove pending gate', { sessionId, scope, error: err });
+      throw err;
+    }
+  },
+
+  /**
    * Retrieves gate-specific metadata for the most recent gate of a given scope.
    */
   async getGateMetadata(sessionId: string, scope: GateScope): Promise<any> {
-    if (isMockMode) {
-      const session = mockSessions.get(sessionId);
-      if (!session) {
-        return null;
-      }
-      const gates = session.pendingGates.filter((g) => g.scope === scope);
-      return gates.length > 0 ? gates[gates.length - 1].metadata : null;
-    }
-
     try {
       const { data, error } = await supabase
         .from('pending_gates')
@@ -265,15 +243,6 @@ export const sessionService = {
    * Adds an approval token to the session.
    */
   async addApproval(sessionId: string, approval: BridgeApproval): Promise<void> {
-    if (isMockMode) {
-      const session = mockSessions.get(sessionId);
-      if (!session) {
-        throw new Error('Session not found');
-      }
-      session.approvals.push(approval);
-      return;
-    }
-
     try {
       const { error } = await supabase.from('approvals').insert({
         token: approval.token,

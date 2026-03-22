@@ -9,9 +9,7 @@ function getClient(): Anthropic {
   if (!_client) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      throw new Error(
-        'ANTHROPIC_API_KEY is not set. Set it in .env or enable BRIDGE_MOCK_MODE=true.',
-      );
+      throw new Error('ANTHROPIC_API_KEY is not set.');
     }
     _client = new Anthropic({ apiKey });
   }
@@ -146,9 +144,4 @@ function tryParse<T>(text: string, schema: ZodSchema<T>): ParseResult<T> {
   }
 }
 
-/** Check whether we are in mock mode. */
-export function isMockMode(): boolean {
-  return process.env.BRIDGE_MOCK_MODE === 'true';
-}
-
-export const llm = { complete, isMockMode };
+export const llm = { complete };

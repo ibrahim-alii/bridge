@@ -1,5 +1,4 @@
 import type { SessionState } from '@bridge/contracts';
-import { PLACEHOLDER_QUIZ } from './placeholderQuiz';
 
 function esc(s: string): string {
   return s
@@ -86,16 +85,16 @@ export function renderSidebarBody(state: SessionState | null, activeTab: string 
         ${activeTab === 'LEARN' ? `
           <div class="card card-dark">
             <div class="gate-title">No active gates</div>
-            <p>Run <strong>Bridge: Analyze Current File</strong> when the backend is connected, or use the UI preview below.</p>
+            <p>Run <strong>Bridge: Analyze Current File</strong> when the backend is connected.</p>
           </div>
-        ` : activeTab === 'CHAT' ? renderMentorSection() : '<div class="card card-dark"><p>Settings coming soon.</p></div>'}
+        ` : activeTab === 'CHAT' ? renderMentorSection(state) : '<div class="card card-dark"><p>Settings coming soon.</p></div>'}
       </div>
       ${bottomNav}
     `;
   }
 
   const gateSection = renderGateSection(state);
-  const chatContent = renderMentorSection();
+  const chatContent = renderMentorSection(state);
 
   return `
     ${header}
@@ -106,19 +105,32 @@ export function renderSidebarBody(state: SessionState | null, activeTab: string 
   `;
 }
 
-function renderMentorSection(): string {
+function renderMentorSection(state: SessionState): string {
+  const attempts = state.currentAttempts;
+  const gate = state.activeGate;
+  const workflowCopy =
+    gate && attempts === 0
+      ? 'Try the gate once first. After a miss, use the Socratic Mentor for nudges. After repeated misses, use Resource Router for outside material.'
+      : gate && attempts === 1
+        ? 'This is the right moment for Socratic hints: stay in the problem, but get unstuck.'
+        : gate && attempts >= 2
+          ? 'You have hints and Resource Router available now. Use the router for docs, blogs, videos, repos, papers, and other live web sources.'
+          : 'Use Mentor for conceptual nudges and Resource Router for outside references while you work.';
+
   return `
     <div class="mentor-header">
       ${ICONS.bulb} SOCRATIC MENTOR
     </div>
     
     <div id="mentor-out" class="mentor-box hidden"></div>
+    <div id="study-out" class="mentor-box hidden" style="margin-top: 12px;"></div>
 
     <div class="chat-input-wrapper">
       <textarea id="mentor-input-answer" placeholder="Ask about architecture..."></textarea>
       <button type="button" class="chat-submit-icon" id="btn-mentor" title="Send Contextual Question">${ICONS.send}</button>
     </div>
-    <p style="font-size: 10px; color: var(--br-text-muted); margin-top: 8px; text-align: center;">AI may provide hints, not direct answers.</p>
+    <button type="button" id="btn-study" style="margin-top: 12px;">Open Resource Router</button>
+    <p style="font-size: 10px; color: var(--br-text-muted); margin-top: 8px; text-align: center;">${esc(workflowCopy)}</p>
   `;
 }
 
@@ -131,22 +143,19 @@ function renderGateSection(state: SessionState): string {
 
   switch (gate) {
     case 'blank':
+      {
+        const blank = metadata?.blanks?.[0];
+        const blankHint = blank?.hint ?? 'Explain what the hidden logic is responsible for.';
+        const blankRange = blank ? `Lines ${blank.startLine}-${blank.endLine}` : 'Current gated block';
+
       return `
         <div class="gate-title">${esc(title)}</div>
         <div class="card">
-          <p>To proceed, explain why the following implementation uses a <span style="color: var(--br-primary)">Context API</span> pattern here instead of standard prop drilling.</p>
-          
+          <p>${esc(blankHint)}</p>
           <div class="card card-dark" style="margin-bottom: 16px; position:relative;">
-            <div style="font-size:10px; color: var(--br-text-muted); margin-bottom: 8px; font-weight:700;">AUTH_PROVIDER.TSX</div>
+            <div style="font-size:10px; color: var(--br-text-muted); margin-bottom: 8px; font-weight:700;">${esc(blankRange)}</div>
             <div class="code-block" style="border-left: 2px solid var(--br-primary); margin: 0; padding-left: 12px; font-size: 13px;">
-              <span style="color:var(--br-text-muted)">export const AuthProvider = ({ children }) => {</span><br/>
-              &nbsp;&nbsp;<span style="color:var(--br-text)">const [user, setUser] = useState(null);</span><br/>
-              &nbsp;&nbsp;<span style="color:var(--br-primary)">return (<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;&lt;AuthContext.Provider value={{ user }}&gt;<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{children}<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;&lt;/AuthContext.Provider&gt;<br/>
-              &nbsp;&nbsp;);</span><br/>
-              <span style="color:var(--br-text-muted)">};</span>
+              Explain what this hidden block does and why it matters before the file can unlock.
             </div>
           </div>
 
@@ -156,9 +165,18 @@ function renderGateSection(state: SessionState): string {
           <div id="feedback" class="feedback" style="display:none"></div>
         </div>
       `;
+      }
     case 'quiz': {
-      const q = metadata?.questions?.[0] || PLACEHOLDER_QUIZ;
-      const questionId = q.questionId || '00000000-0000-4000-8000-000000000001';
+      const q = metadata?.questions?.[0];
+      if (!q) {
+        return `
+          <div class="gate-title">${esc(title)}</div>
+          <div class="card">
+            <p>Quiz metadata is missing. Re-run analysis to regenerate this gate.</p>
+          </div>
+        `;
+      }
+      const questionId = q.questionId;
       const opts = (q.options || [])
         .map(
           (opt: string, i: number) => `
@@ -182,12 +200,21 @@ function renderGateSection(state: SessionState): string {
       `;
     }
     case 'bug':
+      {
+        const sabotage = metadata?.sabotage;
+        const originalContent = sabotage?.originalContent || 'Original line unavailable';
+        const sabotagedContent = sabotage?.sabotagedContent || 'Sabotaged line unavailable';
+        const bugType = sabotage?.bugType || 'logic';
+
       return `
         <div class="gate-title">${esc(title)}</div>
         
         <div class="card">
-          <div class="badge-inserted">${ICONS.bulb} Bug injected: off-by-one error</div>
-          <p>Check the loop boundary in <code style="background: var(--br-card-black); padding: 2px 6px; border-radius: 4px; color: var(--br-primary);">processData()</code>. The data stream is dropping the last packet.</p>
+          <div class="badge-inserted">${ICONS.bulb} Bug injected: ${esc(bugType)}</div>
+          <p>Bridge replaced one line in the editor. Fix the file, then enter the changed line and explain why it was wrong.</p>
+          <div class="code-block" style="margin-bottom: 12px;">
+            <span style="color:#ef4444">- ${esc(originalContent)}</span>\n<span style="color:#a6e22e">+ ${esc(sabotagedContent)}</span>
+          </div>
           
           <input type="number" id="input-line" min="1" placeholder="Line number (e.g. 42)" style="margin-bottom: 8px;" />
           <textarea id="input-answer" placeholder="What is wrong and why?" style="margin-bottom: 12px;"></textarea>
@@ -204,19 +231,23 @@ function renderGateSection(state: SessionState): string {
            <p class="warning-text">Memory leaks are common when loop boundaries exceed allocated buffer space.</p>
         </div>
       `;
+      }
     case 'commit':
+      {
+        const diffSummary = metadata?.diffContext?.summary || 'No diff context available. Use Bridge: Commit And Verify to create a real commit gate.';
       return `
         <div class="gate-title">${esc(title)}</div>
         <div class="card">
           <p>Explain the selected diff in plain English.</p>
           <div class="code-block" style="border-left: 2px solid var(--br-text-muted);">
-            @@ placeholder @@\n<span style="color:#a6e22e">+ const result = await fetch(url);</span>\n<span style="color:#ef4444">- return result.json;</span>
+            ${esc(diffSummary)}
           </div>
           <textarea id="input-answer" placeholder="What does this change do, and why is it safe?" style="margin-bottom: 12px;"></textarea>
           <button type="button" id="btn-submit">Submit Explanation</button>
           <div id="feedback" class="feedback" style="display:none"></div>
         </div>
       `;
+      }
     default:
       return '';
   }
