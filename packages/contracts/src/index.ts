@@ -58,6 +58,16 @@ export type {
   MentorHintResponse,
 } from './mentor';
 
+// ─── Study ──────────────────────────────────────────────────────────
+export {
+  StudyRecommendationRequestSchema,
+  StudyRecommendationResponseSchema,
+} from './study';
+export type {
+  StudyRecommendationRequest,
+  StudyRecommendationResponse,
+} from './study';
+
 // ─── Session ────────────────────────────────────────────────────────
 export {
   GateScopeSchema,
