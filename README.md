@@ -10,7 +10,7 @@ Bridge is a VS Code extension that enforces understanding of AI-generated code b
 
 **[→ Get Bridge on the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=bridge-team.bridge-for-learning)**
 
-Or search `Bridge` in the VS Code Extensions panel (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+Or search `Bridge For Learning` in the VS Code Extensions panel (`Ctrl+Shift+X` / `Cmd+Shift+X`).
 
 Requires VS Code 1.85+ and a running Bridge backend (see [Getting Started](#getting-started)).
 
@@ -35,8 +35,8 @@ Bridge does not write code. It owns the gate.
 
 ## Features
 
-| Priority | Feature | What it does |
-|---|---|---|
+| Feature | What it does |
+|---|---|
 | **Pattern Gating** | Blanks core logic — you explain it before the agent continues |
 | **Why Quizzes** | Locks the prompt bar with a multiple-choice question about the design choice |
 | **Commit Gatekeeper** | Blocks commits until you explain the diff in plain English |
