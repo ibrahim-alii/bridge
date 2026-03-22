@@ -10,6 +10,42 @@ export type { QuizRequest, QuizQuestion, QuizResponse } from './quiz';
 export { EvaluateRequestSchema, EvaluateResponseSchema } from './evaluate';
 export type { EvaluateRequest, EvaluateResponse } from './evaluate';
 
+// ─── Blank Gate ─────────────────────────────────────────────────────
+export {
+  BlankGateSchema,
+  BlankRequestSchema,
+  BlankItemSchema,
+  BlankResponseSchema,
+  BlankEvaluateRequestSchema,
+  BlankEvaluateResponseSchema,
+} from './blank';
+export type {
+  BlankGate,
+  BlankRequest,
+  BlankItem,
+  BlankResponse,
+  BlankEvaluateRequest,
+  BlankEvaluateResponse,
+} from './blank';
+
+// ─── Sabotage Gate ──────────────────────────────────────────────────
+export {
+  BugTypeSchema,
+  SabotageGateSchema,
+  SabotageRequestSchema,
+  SabotageResponseSchema,
+  SabotageFixRequestSchema,
+  SabotageFixResponseSchema,
+} from './sabotage';
+export type {
+  BugType,
+  SabotageGate,
+  SabotageRequest,
+  SabotageResponse,
+  SabotageFixRequest,
+  SabotageFixResponse,
+} from './sabotage';
+
 // ─── Session ────────────────────────────────────────────────────────
 export {
   GateScopeSchema,

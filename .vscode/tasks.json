@@ -3,8 +3,14 @@
   "tasks": [
     {
       "label": "build-extension",
-      "type": "shell",
-      "command": "pnpm turbo run build --filter=bridge",
+      "type": "process",
+      "command": "pnpm.cmd",
+      "args": [
+        "turbo",
+        "run",
+        "build",
+        "--filter=bridge"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -12,7 +18,9 @@
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": ["$tsc"]
+      "problemMatcher": [
+        "$tsc"
+      ]
     }
   ]
 }

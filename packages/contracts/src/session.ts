@@ -34,6 +34,8 @@ export const SessionStateSchema = z.object({
       scope: GateScopeSchema,
       analysisId: z.string().uuid(),
       createdAt: z.string().datetime(),
+      /** Optional metadata for gate-specific data (quiz questions, blank references, bug locations) */
+      metadata: z.any().optional(),
     }),
   ),
   /** List of approval tokens earned this session */
