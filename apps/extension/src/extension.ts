@@ -30,6 +30,27 @@ export function activate(context: vscode.ExtensionContext) {
   const eventRouter = new EventRouter(workspaceManager, gitManager, sessionManager);
 
   context.subscriptions.push(workspaceManager, eventRouter);
+  
+  // Auto-start session if none exists
+  const maybeStart = async () => {
+    if (!sessionManager.getState()) {
+      logger.info('Auto-starting Bridge session...');
+      await sessionManager.createSession();
+      statusBar.sync(sessionManager.getState());
+      sidebarProvider.refresh();
+    }
+  };
+
+  maybeStart();
+
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument((doc) => {
+      // Avoid starting sessions for non-file schemes or transient logs
+      if (doc.uri.scheme === 'file' && !doc.isClosed) {
+        maybeStart();
+      }
+    }),
+  );
 
   logger.info('Bridge extension activated');
 }
