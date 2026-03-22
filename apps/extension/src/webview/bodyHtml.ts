@@ -34,18 +34,18 @@ const ICONS = {
   logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="logo-svg"><path d="M2 14h20"/><path d="M6 5v14"/><path d="M18 5v14"/><path d="M2 11l4-6 Q12 16 18 5l4 6"/><path d="M9 14v-4"/><path d="M12 14v-3"/><path d="M15 14v-4"/></svg>`
 };
 
-export function renderSidebarBody(state: SessionState | null): string {
+export function renderSidebarBody(state: SessionState | null, activeTab: string = 'LEARN'): string {
   const bottomNav = `
     <nav class="bottom-nav">
-      <div class="nav-item active">
+      <div class="nav-item ${activeTab === 'LEARN' ? 'active' : ''}" data-tab="LEARN">
         ${ICONS.learn}
         <span>LEARN</span>
       </div>
-      <div class="nav-item">
+      <div class="nav-item ${activeTab === 'CHAT' ? 'active' : ''}" data-tab="CHAT">
         ${ICONS.chat}
         <span>CHAT</span>
       </div>
-      <div class="nav-item">
+      <div class="nav-item ${activeTab === 'SETTINGS' ? 'active' : ''}" data-tab="SETTINGS">
         ${ICONS.settings}
         <span>SETTINGS</span>
       </div>
@@ -83,18 +83,31 @@ export function renderSidebarBody(state: SessionState | null): string {
     return `
       ${header}
       <div class="content-pad">
-        <div class="card card-dark">
-          <div class="gate-label">MODULE 9</div>
-          <div class="gate-title">No active gates</div>
-          <p>Run <strong>Bridge: Analyze Current File</strong> when the backend is connected, or use the UI preview below.</p>
-        </div>
+        ${activeTab === 'LEARN' ? `
+          <div class="card card-dark">
+            <div class="gate-title">No active gates</div>
+            <p>Run <strong>Bridge: Analyze Current File</strong> when the backend is connected, or use the UI preview below.</p>
+          </div>
+        ` : activeTab === 'CHAT' ? renderMentorSection() : '<div class="card card-dark"><p>Settings coming soon.</p></div>'}
       </div>
       ${bottomNav}
     `;
   }
 
-  const gateSection = renderGateSection(gate);
-  const mentor = `
+  const gateSection = renderGateSection(state);
+  const chatContent = renderMentorSection();
+
+  return `
+    ${header}
+    <div class="content-pad">
+      ${activeTab === 'LEARN' ? gateSection : activeTab === 'CHAT' ? chatContent : '<div class="card card-dark"><p>Settings coming soon.</p></div>'}
+    </div>
+    ${bottomNav}
+  `;
+}
+
+function renderMentorSection(): string {
+  return `
     <div class="mentor-header">
       ${ICONS.bulb} SOCRATIC MENTOR
     </div>
@@ -107,26 +120,18 @@ export function renderSidebarBody(state: SessionState | null): string {
     </div>
     <p style="font-size: 10px; color: var(--br-text-muted); margin-top: 8px; text-align: center;">AI may provide hints, not direct answers.</p>
   `;
-
-  return `
-    ${header}
-    <div class="content-pad">
-      ${gateSection}
-      ${mentor}
-    </div>
-    ${bottomNav}
-  `;
 }
 
-function renderGateSection(gate: SessionState['activeGate']): string {
+function renderGateSection(state: SessionState): string {
+  const gate = state.activeGate;
   if (!gate) return '';
 
   const title = gateTitle(gate);
+  const metadata = state.pendingGates[0]?.metadata;
 
   switch (gate) {
     case 'blank':
       return `
-        <div class="gate-label">MODULE 9.1</div>
         <div class="gate-title">${esc(title)}</div>
         <div class="card">
           <p>To proceed, explain why the following implementation uses a <span style="color: var(--br-primary)">Context API</span> pattern here instead of standard prop drilling.</p>
@@ -152,8 +157,9 @@ function renderGateSection(gate: SessionState['activeGate']): string {
         </div>
       `;
     case 'quiz': {
-      const q = PLACEHOLDER_QUIZ;
-      const opts = q.options
+      const q = metadata?.questions?.[0] || PLACEHOLDER_QUIZ;
+      const questionId = q.questionId || '00000000-0000-4000-8000-000000000001';
+      const opts = (q.options || [])
         .map(
           (opt: string, i: number) => `
           <label class="option" data-index="${i}">
@@ -165,10 +171,9 @@ function renderGateSection(gate: SessionState['activeGate']): string {
         )
         .join('');
       return `
-        <div class="gate-label">CHALLENGE 9.2</div>
         <div class="gate-title">${esc(title)}</div>
         
-        <div class="card">
+        <div class="card" data-question-id="${questionId}">
           <p style="font-size: 15px; font-weight: 500; margin-bottom: 16px;">${esc(q.question)}</p>
           <div id="quiz-options" style="margin-bottom: 16px;">${opts}</div>
           <button type="button" id="btn-submit-quiz" disabled>Submit Answer</button>
@@ -178,7 +183,6 @@ function renderGateSection(gate: SessionState['activeGate']): string {
     }
     case 'bug':
       return `
-        <div class="gate-label">MODULE 9.3</div>
         <div class="gate-title">${esc(title)}</div>
         
         <div class="card">
@@ -202,7 +206,6 @@ function renderGateSection(gate: SessionState['activeGate']): string {
       `;
     case 'commit':
       return `
-        <div class="gate-label">MODULE 9.4</div>
         <div class="gate-title">${esc(title)}</div>
         <div class="card">
           <p>Explain the selected diff in plain English.</p>

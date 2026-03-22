@@ -4,6 +4,9 @@ import { BridgeStatusBar } from './ui/statusBar';
 import { BridgeSidebarProvider } from './ui/sidebarProvider';
 import { SessionManager } from './state/sessionState';
 import { logger } from '@bridge/shared-utils';
+import { WorkspaceManager } from './integrations/workspace';
+import { GitManager } from './integrations/git';
+import { EventRouter } from './integrations/router';
 
 export function activate(context: vscode.ExtensionContext) {
   logger.info('Bridge extension activating...');
@@ -22,10 +25,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   registerCommands(context, sessionManager, sidebarProvider, statusBar);
 
-  const watcher = vscode.workspace.onDidSaveTextDocument((doc) => {
-    logger.debug('File saved', { file: doc.uri.fsPath });
-  });
-  context.subscriptions.push(watcher);
+  const workspaceManager = new WorkspaceManager();
+  const gitManager = new GitManager();
+  const eventRouter = new EventRouter(workspaceManager, gitManager, sessionManager);
+
+  context.subscriptions.push(workspaceManager, eventRouter);
 
   logger.info('Bridge extension activated');
 }

@@ -3,8 +3,8 @@ import { SIDEBAR_STYLES } from './styles';
 import { renderSidebarBody } from './bodyHtml';
 import { CLIENT_SCRIPT } from './clientScript';
 
-export function buildSidebarHtml(state: SessionState | null): string {
-  const body = renderSidebarBody(state);
+export function buildSidebarHtml(state: SessionState | null, activeTab: string = 'LEARN'): string {
+  const body = renderSidebarBody(state, activeTab);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

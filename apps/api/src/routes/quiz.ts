@@ -21,7 +21,7 @@ quizRouter.post('/', validate(QuizRequestSchema), async (req: Request, res: Resp
       analysisId: request.analysisId,
       createdAt: new Date().toISOString(),
       metadata: {
-        quizQuestions: result.questions, // Includes correctIndex
+        questions: result.questions, // Consistent with frontend expectation
       },
     });
 
