@@ -6,11 +6,12 @@ export const EvaluateRequestSchema = z.object({
   sessionId: z.string().uuid(),
   /** The gate scope being evaluated */
   scope: z.enum(['blank', 'quiz', 'bug', 'commit']),
-  /** Quiz answer: selected option index */
+  /** Quiz answer: selected option index and the known correct index */
   quizAnswer: z
     .object({
       questionId: z.string().uuid(),
       selectedIndex: z.number().min(0).max(3),
+      correctIndex: z.number().min(0).max(3),
     })
     .optional(),
   /** Blank-fill answer: the user's implementation */

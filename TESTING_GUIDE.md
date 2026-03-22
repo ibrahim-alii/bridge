@@ -1,6 +1,6 @@
 # Bridge API Testing Guide
 
-This guide contains all the `curl` commands needed to fully test the backend LLM features. 
+This guide contains all the `curl` commands needed to fully test the backend LLM features on a complex real-world implementation: **a fetch wrapper with an LRU-style stale-while-revalidate cache and rate limit handling**.
 
 > **Tip:** We use `python3 -m json.tool` to format the JSON output so it's readable in the terminal.
 
@@ -38,15 +38,15 @@ curl -s -X POST http://localhost:3727/api/session \
 
 ## 3. Analyze Code (Triage)
 
-This endpoint decides *which* blocks should be gated and what *type* of gate to use (quiz, blank, sabotage). We are testing using an async data fetching function.
+This endpoint decides *which* blocks should be gated and what *type* of gate to use (quiz, blank, sabotage) on our complex caching function.
 
 ```bash
 curl -s -X POST http://localhost:3727/api/analyze \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
+    "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
     "language": "javascript",
-    "sessionId": "00000000-0000-0000-0000-000000000001"
+    "sessionId": "462cc224-ce15-403c-b28d-9f291334cf40"
   }' | python3 -m json.tool
 ```
 
@@ -59,13 +59,14 @@ curl -s -X POST http://localhost:3727/api/analyze \
 curl -s -X POST http://localhost:3727/api/quiz \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
-    "analysisId": "00000000-0000-0000-0000-000000000001",
-    "sessionId": "00000000-0000-0000-0000-000000000001"
+    "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
+    "analysisId": "c582a455-577a-4959-a240-e12e30b8f41f",
+    "sessionId": "462cc224-ce15-403c-b28d-9f291334cf40"
   }' | python3 -m json.tool
 ```
 
-**Evaluate a correct answer (index 2):**
+*(You can test `/api/evaluate` by grabbing a `questionId` and the `correctIndex` from the JSON output of the above command)*
+
 ```bash
 curl -s -X POST http://localhost:3727/api/evaluate \
   -H "Content-Type: application/json" \
@@ -73,8 +74,9 @@ curl -s -X POST http://localhost:3727/api/evaluate \
     "sessionId": "00000000-0000-0000-0000-000000000001",
     "scope": "quiz",
     "quizAnswer": {
-      "questionId": "00000000-0000-0000-0000-000000000001",
-      "selectedIndex": 2
+      "questionId": "YOUR_QUESTION_ID",
+      "selectedIndex": 2,
+      "correctIndex": 2
     }
   }' | python3 -m json.tool
 ```
@@ -83,29 +85,28 @@ curl -s -X POST http://localhost:3727/api/evaluate \
 
 ## 5. Blank Gating (Pattern Implementation)
 
-**Generate blanks (identifies what to hide in the code):**
+**Generate blanks:**
 ```bash
 curl -s -X POST http://localhost:3727/api/blank \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
+    "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
     "language": "javascript"
   }' | python3 -m json.tool
 ```
 
-*(You can also pass `gatedBlocks` from the analyze step above to enrich instead of re-scanning).*
+*(You can test `/api/blank/evaluate` by plugging in the exact start and end lines of one of the blanks returned above)*
 
-**Evaluate a short-answer explanation of the blank:**
 ```bash
 curl -s -X POST http://localhost:3727/api/blank/evaluate \
   -H "Content-Type: application/json" \
   -d '{
     "blankId": "test-1",
-    "originalCode": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
-    "startLine": 6,
-    "endLine": 7,
-    "expectedPattern": "a catch block that returns a fallback guest user object on failure",
-    "userExplanation": "If the network request fails or returns a 404, it catches the error and returns a default guest profile instead of crashing the app."
+    "originalCode": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
+    "startLine": 18,
+    "endLine": 21,
+    "expectedPattern": "stale-while-revalidate fallback that returns expired cache data if the network request fails",
+    "userExplanation": "If the network fetch fails completely (like rate limited or offline), it checks if we have any data in the cache at all. Even if its expired, it logs a warning and returns the stale cache data instead of completely crashing the request."
   }' | python3 -m json.tool
 ```
 
@@ -113,32 +114,31 @@ curl -s -X POST http://localhost:3727/api/blank/evaluate \
 
 ## 6. Sabotage (Spot the Bug)
 
-**Inject a bug into the code:**
+**Inject a bug into the cache logic:**
 ```bash
 curl -s -X POST http://localhost:3727/api/sabotage \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
+    "code": "const cache = new Map();\n\nasync function fetchWithCache(url, options = {}) {\n  const cacheKey = url + JSON.stringify(options.body || {});\n  const ttl = options.ttl || 60000;\n\n  if (cache.has(cacheKey) && Date.now() - cache.get(cacheKey).timestamp < ttl) {\n    return cache.get(cacheKey).data;\n  }\n\n  try {\n    const response = await fetch(url, options);\n    if (response.status === 429) throw new Error(\"Rate limited\");\n    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);\n\n    const result = await response.json();\n    cache.set(cacheKey, { timestamp: Date.now(), data: result });\n    return result;\n  } catch (error) {\n    if (cache.has(cacheKey)) {\n      console.warn(\"Serving stale data due to fetch error:\", error.message);\n      return cache.get(cacheKey).data;\n    }\n    throw error;\n  }\n}",
     "language": "javascript"
   }' | python3 -m json.tool
 ```
 
 > *Note: The command above returns a JSON payload containing the `bugId`, `sabotagedCode`, `originalLine`, `originalContent`, `sabotagedContent`, and `bugType`. You must plug those values into the evaluation command below.*
 
-**Evaluate a user's fix:**
-Replace the capitalized placeholder strings below with the exact values returned from the bug injection command above.
+**Evaluate your fix:**
 
 ```bash
 curl -s -X POST http://localhost:3727/api/sabotage/fix \
   -H "Content-Type: application/json" \
   -d '{
     "bugId": "THE_BUG_ID_FROM_ABOVE",
-    "originalCode": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}",
+    "originalCode": "THE_LONG_CODE_STRING",
     "sabotagedCode": "THE_SABOTAGED_CODE_FROM_ABOVE",
-    "originalLine": 4,
-    "originalContent": "    if (!res.ok) throw new Error(\"Not found\");",
-    "sabotagedContent": "THE_SABOTAGED_LINE_FROM_ABOVE",
+    "originalLine": 999,
+    "originalContent": "ORIGINAL",
+    "sabotagedContent": "SABOTAGED",
     "bugType": "THE_BUG_TYPE_FROM_ABOVE",
-    "fixedCode": "async function fetchUser(userId) {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) throw new Error(\"Not found\");\n    return await res.json();\n  } catch (err) {\n    return { id: userId, isGuest: true };\n  }\n}"
+    "fixedCode": "THE_LONG_CODE_STRING"
   }' | python3 -m json.tool
 ```
