@@ -3,6 +3,7 @@ import { registerCommands } from './ui/commands';
 import { BridgeStatusBar } from './ui/statusBar';
 import { BridgeSidebarProvider } from './ui/sidebarProvider';
 import { SessionManager } from './state/sessionState';
+import { ClaudeCodeGateManager } from './integrations/claudeCodeGating';
 import { logger } from '@bridge/shared-utils';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -20,10 +21,17 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(statusBar);
   statusBar.sync(sessionManager.getState());
 
-  registerCommands(context, sessionManager, sidebarProvider, statusBar);
+  // Initialize Claude Code gating manager
+  const claudeGateManager = new ClaudeCodeGateManager(sessionManager);
+  claudeGateManager.registerEditPrevention(context);
+  context.subscriptions.push(claudeGateManager);
 
-  const watcher = vscode.workspace.onDidSaveTextDocument((doc) => {
+  registerCommands(context, sessionManager, sidebarProvider, statusBar, claudeGateManager);
+
+  // Watch for file saves to trigger gating
+  const watcher = vscode.workspace.onDidSaveTextDocument(async (doc) => {
     logger.debug('File saved', { file: doc.uri.fsPath });
+    await claudeGateManager.handleFileSave(doc);
   });
   context.subscriptions.push(watcher);
 

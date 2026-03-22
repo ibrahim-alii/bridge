@@ -61,7 +61,7 @@ export function renderSidebarBody(state: SessionState | null): string {
     `;
   }
 
-  const gateSection = renderGateSection(gate);
+  const gateSection = renderGateSection(gate, state);
   const mentor = `
     <div class="card card-muted">
       <span class="placeholder-tag">Mentor (hint-only)</span>
@@ -82,7 +82,7 @@ export function renderSidebarBody(state: SessionState | null): string {
   `;
 }
 
-function renderGateSection(gate: SessionState['activeGate']): string {
+function renderGateSection(gate: SessionState['activeGate'], state: SessionState | null): string {
   if (!gate) {
     return `
       <div class="card">
@@ -95,17 +95,48 @@ function renderGateSection(gate: SessionState['activeGate']): string {
   const title = gateTitle(gate);
 
   switch (gate) {
-    case 'blank':
+    case 'blank': {
+      // Get gated block information from state
+      let blockContext = '';
+      if (state && state.pendingGates.length > 0) {
+        const currentGate = state.pendingGates[0];
+        const metadata = currentGate.metadata;
+
+        if (metadata && metadata.gatedBlocks && metadata.gatedBlocks.length > 0) {
+          const currentIndex = metadata.currentBlockIndex ?? 0;
+          const totalBlocks = metadata.gatedBlocks.length;
+          const currentBlock = metadata.gatedBlocks[currentIndex];
+
+          if (currentBlock) {
+            blockContext = `
+              <div class="block-context" style="margin-bottom: 12px; padding: 8px; background: var(--vscode-inputValidation-infoBackground); border-left: 3px solid var(--vscode-inputValidation-infoBorder);">
+                <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">
+                  Block ${currentIndex + 1} of ${totalBlocks}
+                </div>
+                <div style="font-size: 11px; margin-bottom: 4px;">
+                  <strong>Lines ${currentBlock.startLine}-${currentBlock.endLine}</strong>
+                </div>
+                <div style="font-size: 11px; color: var(--vscode-descriptionForeground);">
+                  ${esc(currentBlock.reason)}
+                </div>
+              </div>
+            `;
+          }
+        }
+      }
+
       return `
         <div class="card">
           <span class="placeholder-tag">Gate · ${esc(gate)}</span>
           <div class="gate-label">${esc(title)}</div>
-          <p>Explain the missing logic in plain language (no code required for this preview).</p>
-          <textarea id="input-answer" placeholder="Describe what belongs in the blank and why it fits the design."></textarea>
+          ${blockContext}
+          <p>Explain what this code does and the core logic behind it.</p>
+          <textarea id="input-answer" placeholder="Describe what this code block does and why it's designed this way."></textarea>
           <button type="button" id="btn-submit">Submit</button>
           <div id="feedback" class="feedback" style="display:none"></div>
         </div>
       `;
+    }
     case 'quiz': {
       const q = PLACEHOLDER_QUIZ;
       const opts = q.options

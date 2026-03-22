@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { SessionManager } from '../state/sessionState';
 import { BridgeSidebarProvider } from './sidebarProvider';
 import { BridgeStatusBar } from './statusBar';
+import { ClaudeCodeGateManager } from '../integrations/claudeCodeGating';
 import { logger } from '@bridge/shared-utils';
 
 /**
@@ -12,6 +13,7 @@ export function registerCommands(
   sessionManager: SessionManager,
   sidebarProvider: BridgeSidebarProvider,
   statusBar: BridgeStatusBar,
+  claudeGateManager: ClaudeCodeGateManager,
 ): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('bridge.startSession', async () => {
@@ -89,6 +91,20 @@ export function registerCommands(
     sessionManager.onDidChangeSession(() => {
       statusBar.sync(sessionManager.getState());
       sidebarProvider.refresh();
+    }),
+  );
+
+  // Register command for unlocking current block
+  context.subscriptions.push(
+    vscode.commands.registerCommand('bridge.unlockCurrentBlock', async () => {
+      await claudeGateManager.unlockCurrentBlock();
+    }),
+  );
+
+  // Register command to focus sidebar
+  context.subscriptions.push(
+    vscode.commands.registerCommand('bridge.focusSidebar', () => {
+      vscode.commands.executeCommand('bridge.sidebarView.focus');
     }),
   );
 

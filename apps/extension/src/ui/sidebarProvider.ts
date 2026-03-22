@@ -32,6 +32,23 @@ export class BridgeSidebarProvider implements vscode.WebviewViewProvider {
       switch (message.type) {
         case 'submitAnswer': {
           const result = await this.sessionManager.submitAnswer(message.answer as string);
+
+          if (result.passed) {
+            // Unlock current block
+            await vscode.commands.executeCommand('bridge.unlockCurrentBlock');
+
+            // Check if more blocks remain
+            const hasMoreBlocks = await this.sessionManager.advanceToNextBlock();
+
+            if (!hasMoreBlocks) {
+              // All blocks passed, unlock the gate completely
+              await this.sessionManager.unlockGate();
+            }
+
+            // Refresh UI to show next block or completion
+            this.refresh();
+          }
+
           webviewView.webview.postMessage({
             type: 'evaluationResult',
             ...result,

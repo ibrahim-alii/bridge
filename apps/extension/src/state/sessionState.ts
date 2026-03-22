@@ -99,6 +99,11 @@ export class SessionManager implements vscode.Disposable {
           scope: result.suggestedGate,
           analysisId: result.analysisId,
           createdAt: new Date().toISOString(),
+          metadata: {
+            gatedBlocks: result.gatedBlocks,
+            filePath: filePath,
+            currentBlockIndex: 0,
+          },
         });
         await this.persist();
       }
@@ -121,6 +126,11 @@ export class SessionManager implements vscode.Disposable {
           scope: mock.suggestedGate,
           analysisId: mock.analysisId,
           createdAt: new Date().toISOString(),
+          metadata: {
+            gatedBlocks: mock.gatedBlocks,
+            filePath: filePath,
+            currentBlockIndex: 0,
+          },
         });
         await this.persist();
       }
@@ -256,7 +266,7 @@ export class SessionManager implements vscode.Disposable {
     }
   }
 
-  private async unlockGate(): Promise<void> {
+  async unlockGate(): Promise<void> {
     if (!this.state) {
       return;
     }
@@ -281,6 +291,96 @@ export class SessionManager implements vscode.Disposable {
     }
 
     await this.persist();
+  }
+
+  /**
+   * Get the current gated block that needs to be explained
+   */
+  getCurrentGatedBlock(): { startLine: number; endLine: number; reason: string } | null {
+    if (!this.state || this.state.pendingGates.length === 0) {
+      return null;
+    }
+
+    const currentGate = this.state.pendingGates[0];
+    const metadata = currentGate.metadata;
+
+    if (!metadata || !metadata.gatedBlocks || metadata.gatedBlocks.length === 0) {
+      return null;
+    }
+
+    const blockIndex = metadata.currentBlockIndex ?? 0;
+    if (blockIndex >= metadata.gatedBlocks.length) {
+      return null;
+    }
+
+    return metadata.gatedBlocks[blockIndex];
+  }
+
+  /**
+   * Advance to the next block in the current gate
+   * Returns true if more blocks remain, false if all blocks completed
+   */
+  async advanceToNextBlock(): Promise<boolean> {
+    if (!this.state || this.state.pendingGates.length === 0) {
+      return false;
+    }
+
+    const currentGate = this.state.pendingGates[0];
+    const metadata = currentGate.metadata;
+
+    if (!metadata || !metadata.gatedBlocks) {
+      return false;
+    }
+
+    const currentIndex = metadata.currentBlockIndex ?? 0;
+    const nextIndex = currentIndex + 1;
+
+    if (nextIndex >= metadata.gatedBlocks.length) {
+      // All blocks completed
+      return false;
+    }
+
+    // Advance to next block
+    metadata.currentBlockIndex = nextIndex;
+    this.state.currentAttempts = 0;
+    await this.persist();
+    return true;
+  }
+
+  /**
+   * Get all gated blocks for the current gate
+   */
+  getAllGatedBlocks(): Array<{ startLine: number; endLine: number; reason: string }> | null {
+    if (!this.state || this.state.pendingGates.length === 0) {
+      return null;
+    }
+
+    const currentGate = this.state.pendingGates[0];
+    return currentGate.metadata?.gatedBlocks ?? null;
+  }
+
+  /**
+   * Get the current block index
+   */
+  getCurrentBlockIndex(): number {
+    if (!this.state || this.state.pendingGates.length === 0) {
+      return 0;
+    }
+
+    const currentGate = this.state.pendingGates[0];
+    return currentGate.metadata?.currentBlockIndex ?? 0;
+  }
+
+  /**
+   * Get the file path for the current gate
+   */
+  getCurrentGateFilePath(): string | null {
+    if (!this.state || this.state.pendingGates.length === 0) {
+      return null;
+    }
+
+    const currentGate = this.state.pendingGates[0];
+    return currentGate.metadata?.filePath ?? null;
   }
 
   private async persist(): Promise<void> {
