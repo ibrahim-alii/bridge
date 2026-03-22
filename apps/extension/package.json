@@ -7,7 +7,10 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Education", "Other"],
+  "categories": [
+    "Education",
+    "Other"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -63,8 +66,8 @@
     "@bridge/shared-utils": "workspace:*"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
-    "@types/node": "^20.11.0",
+    "@types/node": "^20.19.37",
+    "@types/vscode": "^1.110.0",
     "typescript": "^5.4.0"
   }
 }
