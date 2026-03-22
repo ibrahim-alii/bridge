@@ -37,14 +37,14 @@ Bridge does not write code. It owns the gate.
 
 | Priority | Feature | What it does |
 |---|---|---|
-| P0 | **Pattern Gating** | Blanks core logic — you explain it before the agent continues |
-| P0 | **Why Quizzes** | Locks the prompt bar with a multiple-choice question about the design choice |
-| P0 | **Commit Gatekeeper** | Blocks commits until you explain the diff in plain English |
-| P1 | **Socratic Mentor** | Gives hints and questions only — never raw code |
-| P1 | **Spot the Bug** | Injects one controlled bug and asks you to find it |
-| P1 | **Algo-Bridge** | Surfaces a relevant study resource when you're blocked |
-| P2 | **Big O Bounty** | Flags slow implementations and challenges you to refactor |
-| P3 | **State Destruction** | Deletes the generated block after repeated failures *(off by default)* |
+| **Pattern Gating** | Blanks core logic — you explain it before the agent continues |
+| **Why Quizzes** | Locks the prompt bar with a multiple-choice question about the design choice |
+| **Commit Gatekeeper** | Blocks commits until you explain the diff in plain English |
+| **Socratic Mentor** | Gives hints and questions only — never raw code |
+| **Spot the Bug** | Injects one controlled bug and asks you to find it |
+| **Algo-Bridge** | Surfaces a relevant study resource when you're blocked |
+| **Big O Bounty** | Flags slow implementations and challenges you to refactor |
+| **State Destruction** | Deletes the generated block after repeated failures *(off by default)* |
 
 ---
 
@@ -104,19 +104,6 @@ bridge/
 All request/response shapes live in `packages/contracts`. The extension renders session state — it never invents it. Policy and grading decisions belong to the backend.
 
 **API endpoints:** `/api/analyze` · `/api/quiz` · `/api/evaluate` · `/api/mentor` · `/api/commit/review`
-
----
-
-## Contributing
-
-| Branch | Owns |
-|---|---|
-| `chore/bootstrap-monorepo` | Repo scaffolding, shared contracts, mock server |
-| `feat/backend-policy-and-eval` | Routes, prompt templates, evaluation logic |
-| `feat/extension-shell-and-ui` | Sidebar, lock state UI, quiz/mentor views |
-| `feat/editor-integrations-and-git` | Pattern gating, git interception, Tree-sitter, deploy |
-
-Implementation branches never edit the same file. All cross-branch communication goes through `packages/contracts`.
 
 ---
 
